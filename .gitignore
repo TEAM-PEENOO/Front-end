@@ -1,0 +1,33 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# macOS
+.DS_Store
+
+# iOS
+ios/build/
+ios/Pods/
+ios/Podfile.lock
+*.xcworkspace
+
+# Android
+android/.gradle
+android/app/build
+android/build
+*.apk
+*.aab
+android/local.properties
+
+# Environment variables
+.env
+.env.*
+!.env.example
