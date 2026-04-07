@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: My Jeja API
-  version: 1.1.0
+  version: 1.0.0
   description: |
     MVP API for My Jeja.
     Scope: math-only, levels 1-9, streaming teaching chat, secure exam grading.
@@ -32,12 +32,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
-        '429':
-          description: Too many requests
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
   /auth/login:
     post:
       tags: [Auth]
@@ -55,12 +49,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
-        '429':
-          description: Too many requests
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /persona:
     post:
@@ -81,12 +69,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PersonaResponse'
-        '409':
-          description: Persona already exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /persona/me:
     get:
@@ -155,12 +137,6 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/PlacementInProgressResponse'
                   - $ref: '#/components/schemas/PlacementCompletedResponse'
-        '409':
-          description: Duplicate answer submission
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /teaching/sessions:
     post:
@@ -242,12 +218,6 @@ paths:
             text/event-stream:
               schema:
                 type: string
-        '429':
-          description: Too many requests
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /teaching/sessions/{session_id}/finish:
     post:
@@ -269,12 +239,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TeachingResultResponse'
-        '429':
-          description: Too many requests
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /exams:
     post:
@@ -316,18 +280,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SubmitExamResponse'
-        '409':
-          description: Exam already submitted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '429':
-          description: Too many requests
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /dashboard/home:
     get:
@@ -450,14 +402,14 @@ components:
         name: { type: string }
         personality:
           type: string
-          enum: [curious, careful, clumsy, perfectionist, steady]
+          enum: [curious, careful, clumsy, perfectionist]
     UpdatePersonaRequest:
       type: object
       properties:
         name: { type: string }
         personality:
           type: string
-          enum: [curious, careful, clumsy, perfectionist, steady]
+          enum: [curious, careful, clumsy, perfectionist]
     PersonaResponse:
       type: object
       properties:
@@ -465,7 +417,7 @@ components:
         name: { type: string }
         personality:
           type: string
-          enum: [curious, careful, clumsy, perfectionist, steady]
+          enum: [curious, careful, clumsy, perfectionist]
         current_level: { type: integer, minimum: 1, maximum: 9 }
         placement_done: { type: boolean }
     PlacementQuestion:
@@ -614,8 +566,3 @@ components:
         concept: { type: string }
         fail_count: { type: integer, minimum: 1 }
         last_failed_at: { type: string, format: date-time }
-    ErrorResponse:
-      type: object
-      properties:
-        detail: { type: string }
-        request_id: { type: string }

@@ -8,5 +8,3 @@ python-jose[cryptography]
 passlib[bcrypt]
 httpx
 email-validator
-redis
-sentry-sdk[fastapi]

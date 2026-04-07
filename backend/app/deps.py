@@ -16,13 +16,7 @@ def get_current_user_id(
     if creds is None:
         raise HTTPException(status_code=401, detail="Missing bearer token")
     try:
-        payload = jwt.decode(
-            creds.credentials,
-            settings.jwt_secret,
-            algorithms=["HS256"],
-            issuer=settings.jwt_issuer,
-            audience=settings.jwt_audience,
-        )
+        payload = jwt.decode(creds.credentials, settings.jwt_secret, algorithms=["HS256"])
         sub = payload.get("sub")
         if not sub:
             raise HTTPException(status_code=401, detail="Invalid token")
