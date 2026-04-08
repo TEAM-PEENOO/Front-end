@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useFonts, Jua_400Regular } from '@expo-google-fonts/jua';
+import { GamjaFlower_400Regular } from '@expo-google-fonts/gamja-flower';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as WebBrowser from 'expo-web-browser';
@@ -108,7 +109,7 @@ function AppNavigator() {
 }
 
 export default function App() {
-  const [fontsLoaded] = useFonts({ Jua_400Regular });
+  const [fontsLoaded] = useFonts({ Jua_400Regular, GamjaFlower_400Regular });
   if (!fontsLoaded) return null;
 
   return (

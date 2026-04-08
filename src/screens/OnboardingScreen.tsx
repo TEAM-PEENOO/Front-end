@@ -362,10 +362,15 @@ export const OnboardingScreen: React.FC = () => {
                       {personality ? (
                         <Image
                           source={
-                            personality === 'curious' ? require('../../assets/images/char_curious.png') :
-                              personality === 'careful' ? require('../../assets/images/char_careful.png') :
-                                personality === 'clumsy' ? require('../../assets/images/char_clumsy.png') :
-                                  require('../../assets/images/char_perfectionist.png')
+                            gender === 'girl'
+                              ? personality === 'curious'      ? require('../../assets/images/girl_curious.png')
+                                : personality === 'careful'    ? require('../../assets/images/girl_careful.png')
+                                : personality === 'clumsy'     ? require('../../assets/images/girl_clumsy.png')
+                                :                                require('../../assets/images/girl_perfectionist.png')
+                              : personality === 'curious'      ? require('../../assets/images/char_curious.png')
+                                : personality === 'careful'    ? require('../../assets/images/char_careful.png')
+                                : personality === 'clumsy'     ? require('../../assets/images/char_clumsy.png')
+                                :                                require('../../assets/images/char_perfectionist.png')
                           }
                           style={styles.previewCharImg}
                           resizeMode="contain"
