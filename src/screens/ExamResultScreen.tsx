@@ -1,73 +1,102 @@
 // src/screens/ExamResultScreen.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Animated } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import { GradeResult } from '../types';
 
 export const ExamResultScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const [showConfetti, setShowConfetti] = useState(false);
+  const route = useRoute<any>();
+  const {
+    subjectId,
+    result,
+    studentName = '민이',
+    subjectName = '',
+  }: { subjectId: string; result: GradeResult; studentName: string; subjectName: string } = route.params || {};
+
+  const [showResult, setShowResult] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
 
   useEffect(() => {
-    // Mock simulation of results analyzing, then BOOM confetti
     setTimeout(() => {
-      setShowConfetti(true);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }).start();
-    }, 1500);
+      setShowResult(true);
+      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }).start();
+    }, 1000);
   }, []);
+
+  const passed = result?.passed ?? false;
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {!showConfetti ? (
+        {!showResult ? (
           <View style={styles.analyzingBox}>
-            <FontAwesome5 name="spinner" size={40} color={colors.primary} style={{marginBottom: 16}} />
+            <FontAwesome5 name="spinner" size={40} color={colors.primary} style={{ marginBottom: 16 }} />
             <Text style={styles.analyzingText}>시험 결과를 합산하는 중...</Text>
           </View>
         ) : (
           <Animated.View style={[styles.resultContainer, { opacity: fadeAnim }]}>
-            
+
             <View style={styles.confettiHeader}>
-              <FontAwesome5 name="star" size={24} color="#FFD166" style={{position: 'absolute', top: -30, left: 20}} />
-              <FontAwesome5 name="star" size={32} color="#FFD166" style={{position: 'absolute', top: -50, right: 30}} />
-              <Text style={styles.congratulationsText}>🎉 합격입니다! 🎉</Text>
+              {passed && <>
+                <FontAwesome5 name="star" size={24} color="#FFD166" style={{ position: 'absolute', top: -30, left: 20 }} />
+                <FontAwesome5 name="star" size={32} color="#FFD166" style={{ position: 'absolute', top: -50, right: 30 }} />
+              </>}
+              <Text style={[styles.congratulationsText, !passed && { color: colors.error }]}>
+                {passed ? '합격입니다!' : '아쉽지만 불합격'}
+              </Text>
             </View>
 
             <View style={styles.scoreBoard}>
               <View style={styles.scoreRow}>
                 <Text style={styles.scoreTitle}>선생님 점수</Text>
-                <Text style={styles.scoreVal}>85점</Text>
+                <Text style={styles.scoreVal}>{result?.user_score ?? 0}점</Text>
               </View>
               <View style={styles.scoreRow}>
-                <Text style={styles.scoreTitle}>민이 점수</Text>
-                <Text style={styles.scoreVal}>70점</Text>
+                <Text style={styles.scoreTitle}>{studentName} 점수</Text>
+                <Text style={styles.scoreVal}>{result?.persona_score ?? 0}점</Text>
               </View>
-              
               <View style={styles.divider} />
-              
               <View style={styles.scoreRow}>
                 <Text style={styles.finalScoreTitle}>합산 최종 점수</Text>
-                <Text style={styles.finalScoreVal}>79점</Text>
+                <Text style={[styles.finalScoreVal, !passed && { color: colors.error }]}>
+                  {result?.combined_score ?? 0}점
+                </Text>
               </View>
+              <Text style={styles.thresholdText}>합격 기준: {result?.pass_threshold ?? 75}점</Text>
             </View>
+
+            {result?.wrong_concepts?.length > 0 && (
+              <View style={styles.wrongBox}>
+                <Text style={styles.wrongTitle}>이번 시험 약점 개념</Text>
+                {result.wrong_concepts.map((c, i) => (
+                  <Text key={i} style={styles.wrongItem}>• {c}</Text>
+                ))}
+              </View>
+            )}
 
             <View style={styles.celebrationBox}>
-              <View style={styles.avatarCircle}>
-                <FontAwesome5 name="user-graduate" size={50} color={colors.primary} />
+              <View style={[styles.avatarCircle, !passed && { borderColor: colors.error, backgroundColor: '#FFEBEE' }]}>
+                <FontAwesome5 name={passed ? 'user-graduate' : 'redo-alt'} size={50} color={passed ? colors.primary : colors.error} />
               </View>
-              <Text style={styles.celebrationMsg}>"선생님 덕분에 6학년으로 진급했어요!"</Text>
+              <Text style={styles.celebrationMsg}>
+                {passed
+                  ? `"선생님 덕분에 다음 단계로 진급했어요!"`
+                  : `"더 열심히 배워올게요. 다시 가르쳐주세요!"`
+                }
+              </Text>
             </View>
 
-            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
-              <Text style={styles.buttonText}>새로운 교실로 이동하기</Text>
+            <TouchableOpacity
+              style={[styles.button, !passed && { backgroundColor: colors.secondary }]}
+              onPress={() => navigation.navigate('Home', { subjectId })}
+            >
+              <Text style={styles.buttonText}>
+                {passed ? '다음 단계로 가기' : '다시 가르치러 가기'}
+              </Text>
             </TouchableOpacity>
-
           </Animated.View>
         )}
       </View>
@@ -150,6 +179,34 @@ const styles = StyleSheet.create({
     fontFamily: 'Jua_400Regular',
     fontSize: 32,
     color: colors.primary,
+  },
+  thresholdText: {
+    fontFamily: 'Jua_400Regular',
+    fontSize: 14,
+    color: '#AAA',
+    textAlign: 'right',
+    marginTop: 4,
+  },
+  wrongBox: {
+    width: '100%',
+    backgroundColor: '#FFF3F5',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+    marginBottom: 24,
+  },
+  wrongTitle: {
+    fontFamily: 'Jua_400Regular',
+    fontSize: 16,
+    color: colors.error,
+    marginBottom: 8,
+  },
+  wrongItem: {
+    fontFamily: 'Jua_400Regular',
+    fontSize: 15,
+    color: colors.textDark,
+    lineHeight: 24,
   },
   celebrationBox: {
     alignItems: 'center',

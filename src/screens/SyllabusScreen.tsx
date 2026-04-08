@@ -1,245 +1,203 @@
 // src/screens/SyllabusScreen.tsx
-import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Animated } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import React, { useCallback, useRef, useEffect, useState } from 'react';
+import {
+  View, Text, StyleSheet, SafeAreaView, TouchableOpacity,
+  ScrollView, Animated, ActivityIndicator, Alert,
+} from 'react-native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { stagesApi } from '../api/stages';
+import { Stage } from '../types';
+import { colors } from '../theme/colors';
+
+const RETENTION_COLOR: Record<string, string> = {
+  '선명': colors.success,
+  '흐릿해지는 중': colors.accent,
+  '많이 흐릿함': '#FF9800',
+  '거의 잊어버림': colors.error,
+  '잊어버림': '#555',
+};
 
 export const SyllabusScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { 
-    subjectName = '웹 기초', 
-    stages = [
-      { name: '1단계', items: ["HTML 기본", "CSS 스타일링"] },
-      { name: '2단계', items: ["JS 변수와 조건문", "JS 반복문"] },
-      { name: '3단계', items: ["DOM 조작", "이벤트 리스너"] }
-    ] 
-  } = route.params || {};
+  const { subjectId, subjectName = '', studentName = '' } = route.params || {};
 
-  const currentStageIndex = 0; // Mock: currently at step 1
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [loading, setLoading] = useState(true);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
-  }, []);
+  const fetchStages = useCallback(async () => {
+    try {
+      const data = await stagesApi.list(subjectId);
+      setStages(data);
+    } catch {
+      Alert.alert('오류', '진도표를 불러오지 못했어요.');
+    } finally {
+      setLoading(false);
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+    }
+  }, [subjectId]);
+
+  useFocusEffect(useCallback(() => {
+    setLoading(true);
+    fadeAnim.setValue(0);
+    fetchStages();
+  }, [fetchStages]));
+
+  const currentStageIdx = stages.findIndex(s => !s.passed);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.headerTitleRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{marginRight: 16}}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 16 }}>
             <FontAwesome5 name="arrow-left" size={24} color="#3E2723" />
           </TouchableOpacity>
-          <FontAwesome5 name="map" size={28} color="#3E2723" style={{marginRight: 12}} />
+          <FontAwesome5 name="map" size={28} color="#3E2723" style={{ marginRight: 12 }} />
           <Text style={styles.headerTitle}>우리 반 진도표</Text>
         </View>
         <Text style={styles.headerSubtitle}>[{subjectName}] 커리큘럼 로드맵</Text>
       </View>
 
-      <Animated.ScrollView 
-        contentContainerStyle={styles.boardContainer}
-        showsVerticalScrollIndicator={false}
-        style={{ opacity: fadeAnim }}
-      >
-        <View style={styles.corkboard}>
-          {/* Vertical dash line linking the notes */}
-          <View style={styles.timelineLine} />
+      {loading ? (
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+      ) : (
+        <Animated.ScrollView
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+          style={{ opacity: fadeAnim }}
+        >
+          {stages.map((stage, idx) => {
+            const isCurrent = idx === currentStageIdx;
+            const isPassed = stage.passed;
+            const taughtCount = stage.curriculum_items.filter(i => i.taught).length;
+            const totalCount = stage.curriculum_items.length;
 
-          {stages.map((stage: any, index: number) => {
-            const isCurrent = index === currentStageIndex;
-            const isCompleted = index < currentStageIndex;
-            
             return (
-              <View key={index} style={styles.stageCardWrapper}>
-                
-                {/* Note Paper */}
-                <View style={[styles.noteCard, isCurrent && styles.noteCardCurrent]}>
-                  {/* Pin Graphic */}
-                  <View style={styles.pinIcon}>
-                    <FontAwesome5 name="thumbtack" size={28} color={isCompleted ? "#4CAF50" : (isCurrent ? "#F44336" : "#9E9E9E")} />
+              <View
+                key={stage.id}
+                style={[
+                  styles.stageCard,
+                  isPassed && styles.stageCardPassed,
+                  isCurrent && styles.stageCardCurrent,
+                ]}
+              >
+                {/* 단계 헤더 */}
+                <View style={styles.stageCardHeader}>
+                  <View style={[styles.stageBadge, isPassed && styles.stageBadgePassed, isCurrent && styles.stageBadgeCurrent]}>
+                    <FontAwesome5
+                      name={isPassed ? 'check' : isCurrent ? 'star' : 'lock'}
+                      size={14}
+                      color="#FFF"
+                    />
                   </View>
-
-                  <View style={styles.cardHeader}>
-                    <Text style={[styles.stageName, isCurrent && styles.stageNameCurrent]}>
-                      {stage.name}
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.stageName}>{stage.name}</Text>
+                    <Text style={styles.stageProgress}>{taughtCount}/{totalCount} 학습 완료</Text>
+                  </View>
+                  {isCurrent && !stage.exam_unlocked && (
+                    <View style={styles.lockBadge}>
+                      <FontAwesome5 name="lock" size={12} color="#888" style={{ marginRight: 4 }} />
+                      <Text style={styles.lockBadgeText}>시험 잠김</Text>
+                    </View>
+                  )}
+                  {isCurrent && stage.exam_unlocked && (
+                    <View style={styles.unlockBadge}>
+                      <FontAwesome5 name="award" size={12} color={colors.primary} style={{ marginRight: 4 }} />
+                      <Text style={styles.unlockBadgeText}>시험 가능</Text>
+                    </View>
+                  )}
+                  {isPassed && stage.passed_at && (
+                    <Text style={styles.passedDate}>
+                      {new Date(stage.passed_at).toLocaleDateString('ko-KR')} 통과
                     </Text>
-                    {isCurrent && (
-                      <View style={styles.currentBadge}>
-                        <Text style={styles.currentBadgeText}>진행 중</Text>
-                      </View>
-                    )}
-                    {isCompleted && (
-                      <FontAwesome5 name="check-circle" size={20} color="#4CAF50" />
-                    )}
-                  </View>
-
-                  <View style={styles.cardBody}>
-                    {stage.items && stage.items.map((item: any, i: number) => {
-                      const itemName = typeof item === 'string' ? item : item.name;
-                      return (
-                        <View key={i} style={styles.itemRow}>
-                          <FontAwesome5 name="check" size={14} color="#795548" style={{minWidth: 20}} />
-                          <Text style={styles.itemText}>{itemName}</Text>
-                        </View>
-                      );
-                    })}
-                  </View>
+                  )}
                 </View>
-                
+
+                {/* 항목 목록 */}
+                {stage.curriculum_items.map(item => (
+                  <View key={item.id} style={styles.itemRow}>
+                    <FontAwesome5
+                      name={item.taught ? 'check-circle' : 'circle'}
+                      size={16}
+                      color={item.taught ? colors.success : '#CCC'}
+                      style={{ marginRight: 10 }}
+                    />
+                    <Text style={[styles.itemText, !item.taught && { color: '#AAA' }]}>
+                      {item.title}
+                    </Text>
+                  </View>
+                ))}
+
+                {/* 진행 바 */}
+                <View style={styles.progressBarBg}>
+                  <View style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${totalCount > 0 ? (taughtCount / totalCount) * 100 : 0}%`,
+                      backgroundColor: isPassed ? colors.success : isCurrent ? colors.primary : '#CCC',
+                    },
+                  ]} />
+                </View>
               </View>
             );
           })}
-        </View>
-      </Animated.ScrollView>
+
+          {stages.length === 0 && (
+            <View style={styles.emptyContainer}>
+              <FontAwesome5 name="map" size={60} color={colors.primaryLight} />
+              <Text style={styles.emptyText}>아직 단계가 설정되지 않았어요.</Text>
+            </View>
+          )}
+        </Animated.ScrollView>
+      )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#8D6E63', // Outer rim color (wood)
-  },
+  safeArea: { flex: 1, backgroundColor: '#FEF9EC' },
   header: {
-    backgroundColor: '#3E2723', // Dark brown header
-    padding: 20,
-    borderBottomWidth: 4,
-    borderBottomColor: '#271917',
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+    backgroundColor: '#FEF3C7', paddingTop: 56, paddingBottom: 18,
+    paddingHorizontal: 24, borderBottomWidth: 3, borderColor: '#D4B886',
   },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EFEBE9', // Light paper background behind title
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  headerTitle: { fontFamily: 'Jua_400Regular', fontSize: 26, color: '#3E2723' },
+  headerSubtitle: { fontFamily: 'Jua_400Regular', fontSize: 15, color: '#8C7A5E', marginLeft: 44 },
+  container: { padding: 16, gap: 16, paddingBottom: 40 },
+  stageCard: {
+    backgroundColor: '#FFF', borderRadius: 20, padding: 18,
+    borderWidth: 2, borderColor: '#EAE1D3',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3,
+    gap: 10,
   },
-  headerTitle: {
-    fontFamily: 'Jua_400Regular',
-    fontSize: 26,
-    color: '#3E2723',
+  stageCardPassed: { borderColor: colors.primaryLight, backgroundColor: '#F1F8F2' },
+  stageCardCurrent: { borderColor: colors.primary, borderWidth: 3 },
+  stageCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  stageBadge: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: '#CCC', justifyContent: 'center', alignItems: 'center',
   },
-  headerSubtitle: {
-    fontFamily: 'Jua_400Regular',
-    fontSize: 18,
-    color: '#D7CCC8',
-    marginTop: 12,
-    marginLeft: 8,
+  stageBadgePassed: { backgroundColor: colors.success },
+  stageBadgeCurrent: { backgroundColor: colors.primary },
+  stageName: { fontFamily: 'Jua_400Regular', fontSize: 20, color: colors.textDark },
+  stageProgress: { fontFamily: 'Jua_400Regular', fontSize: 13, color: '#888' },
+  lockBadge: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F5F5F5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10,
   },
-  boardContainer: {
-    padding: 16,
-    paddingBottom: 60,
+  lockBadgeText: { fontFamily: 'Jua_400Regular', fontSize: 12, color: '#888' },
+  unlockBadge: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10,
   },
-  corkboard: {
-    backgroundColor: '#C19A6B', // Cork texture base color
-    borderRadius: 12,
-    padding: 24,
-    minHeight: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 5,
-    borderWidth: 6,
-    borderColor: '#795548', // Wood frame
-  },
-  timelineLine: {
-    position: 'absolute',
-    top: 40,
-    bottom: 40,
-    left: 44, // Align with pins
-    width: 4,
-    borderStyle: 'dashed',
-    borderWidth: 2,
-    borderColor: '#8D6E63', // faint line on corkboard
-    zIndex: 1,
-  },
-  stageCardWrapper: {
-    marginBottom: 32,
-    position: 'relative',
-    paddingLeft: 40, // Space for timeline line
-    zIndex: 2,
-  },
-  noteCard: {
-    backgroundColor: '#F7F3E8', // Light yellow/cream paper
-    borderRadius: 8,
-    padding: 20,
-    paddingTop: 24, // Space for pin
-    shadowColor: '#000',
-    shadowOffset: { width: 4, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: '#E8E1CE',
-  },
-  noteCardCurrent: {
-    backgroundColor: '#E8F5E9', // Slight green tint for current
-    borderWidth: 2,
-    borderColor: '#81C784',
-    transform: [{ rotate: '-1deg' }],
-  },
-  pinIcon: {
-    position: 'absolute',
-    top: -14,
-    left: -20, // Push pin slightly off-center to left to align with timeline
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 1, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1.5,
-    borderBottomColor: 'rgba(121, 85, 72, 0.2)',
-    paddingBottom: 12,
-    marginBottom: 16,
-  },
-  stageName: {
-    fontFamily: 'Jua_400Regular',
-    fontSize: 22,
-    color: '#4E342E',
-  },
-  stageNameCurrent: {
-    color: '#2E7D32',
-    fontSize: 24,
-  },
-  currentBadge: {
-    backgroundColor: '#F44336',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  currentBadgeText: {
-    fontFamily: 'Jua_400Regular',
-    fontSize: 14,
-    color: '#FFF',
-  },
-  cardBody: {
-    paddingLeft: 8,
-    gap: 12,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  itemText: {
-    fontFamily: 'Jua_400Regular',
-    fontSize: 18,
-    color: '#5D4037',
-    lineHeight: 24,
-  },
+  unlockBadgeText: { fontFamily: 'Jua_400Regular', fontSize: 12, color: colors.primary },
+  passedDate: { fontFamily: 'Jua_400Regular', fontSize: 12, color: colors.success },
+  itemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
+  itemText: { fontFamily: 'Jua_400Regular', fontSize: 16, color: colors.textDark, flex: 1 },
+  progressBarBg: { height: 6, backgroundColor: '#EEE', borderRadius: 4, marginTop: 4 },
+  progressBarFill: { height: 6, borderRadius: 4 },
+  emptyContainer: { alignItems: 'center', paddingTop: 80, gap: 12 },
+  emptyText: { fontFamily: 'Jua_400Regular', fontSize: 18, color: '#AAA' },
 });

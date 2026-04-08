@@ -1,22 +1,69 @@
 // src/screens/WeaknessNoteScreen.tsx
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Modal } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
+import {
+  View, Text, StyleSheet, SafeAreaView, FlatList,
+  TouchableOpacity, Alert, ActivityIndicator, RefreshControl,
+} from 'react-native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { CustomButton } from '../components/CustomButton';
 import { colors } from '../theme/colors';
+import { weakPointsApi } from '../api/weakPoints';
+import { WeakPointTag } from '../types';
 
-const MOCK_WEAKNESSES = [
-  { id: '1', concept: '소수의 나눗셈', failCount: 3, lastFailed: '2일 전' },
-  { id: '2', concept: '분수의 덧셈', failCount: 1, lastFailed: '1주일 전' },
-  { id: '3', concept: '비례식의 기초', failCount: 5, lastFailed: '어제' },
-];
+const DUST_COLORS = ['#E8F5E9', '#FFF9C4', '#FFECB3', '#FFCDD2', '#EF9A9A'];
 
 export const WeaknessNoteScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { studentName, gender } = route.params || {};
-  const [selectedWeakness, setSelectedWeakness] = React.useState<any>(null);
+  const { subjectId, studentName = '제자' } = route.params || {};
+
+  const [tags, setTags] = useState<WeakPointTag[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchTags = useCallback(async () => {
+    try {
+      const data = await weakPointsApi.list(subjectId);
+      setTags(data);
+    } catch {
+      Alert.alert('오류', '약점 목록을 불러오지 못했어요.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [subjectId]);
+
+  useFocusEffect(useCallback(() => {
+    setLoading(true);
+    fetchTags();
+  }, [fetchTags]));
+
+  const handleDelete = (tag: WeakPointTag) => {
+    Alert.alert(
+      '약점 해소',
+      `"${tag.concept}"를 약점 목록에서 제거할까요?`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '제거',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await weakPointsApi.delete(subjectId, tag.id);
+              setTags(prev => prev.filter(t => t.id !== tag.id));
+            } catch {
+              Alert.alert('오류', '삭제에 실패했어요.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const getDustStyle = (failCount: number) => {
+    const idx = Math.min(failCount - 1, DUST_COLORS.length - 1);
+    return { backgroundColor: DUST_COLORS[idx] };
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -25,269 +72,97 @@ export const WeaknessNoteScreen: React.FC = () => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 16 }}>
             <FontAwesome5 name="arrow-left" size={24} color="#FFF" />
           </TouchableOpacity>
-          <FontAwesome5 name="archive" size={28} color="#FFF" style={styles.headerIcon} />
+          <FontAwesome5 name="archive" size={28} color="#FFF" style={{ marginRight: 10 }} />
           <Text style={styles.headerTitle}>개념 사물함</Text>
         </View>
-        <Text style={styles.headerSubtitle}>민이가 헷갈려하는 빈틈을 채워주세요!</Text>
+        <Text style={styles.headerSubtitle}>{studentName}가 헷갈려하는 빈틈을 채워주세요!</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
-        {MOCK_WEAKNESSES.sort((a, b) => b.failCount - a.failCount).map((item, index) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.noteItem}
-            activeOpacity={0.8}
-            onPress={() => setSelectedWeakness(item)}
-          >
-            {/* Warning Ribbon */}
-            <View style={[styles.ribbon, item.failCount >= 3 ? styles.ribbonDanger : styles.ribbonSafe]} />
-
-            <View style={styles.noteContent}>
-              <View style={styles.noteHeader}>
-                <Text style={styles.conceptText}>
-                  {index + 1}. {item.concept}
-                </Text>
-                {item.failCount >= 3 && (
-                  <View style={styles.warningBadge}>
-                    <FontAwesome5 name="exclamation-triangle" size={12} color="#FFF" style={{ marginRight: 4 }} />
-                    <Text style={styles.warningText}>긴급 복습!</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+      ) : (
+        <FlatList
+          data={tags}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); fetchTags(); }}
+              tintColor={colors.primary}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <FontAwesome5 name="check-circle" size={60} color={colors.primaryLight} />
+              <Text style={styles.emptyTitle}>약점 개념이 없어요!</Text>
+              <Text style={styles.emptySub}>시험을 잘 보고 있군요.</Text>
+            </View>
+          }
+          renderItem={({ item, index }) => (
+            <View style={[styles.noteItem, getDustStyle(item.fail_count)]}>
+              <View style={styles.noteIcon}>
+                <FontAwesome5 name="book" size={22} color={colors.secondaryDark} />
+                {/* fail_count가 높을수록 먼지 효과 */}
+                {item.fail_count >= 3 && (
+                  <View style={styles.dustBadge}>
+                    <Text style={styles.dustBadgeText}>!</Text>
                   </View>
                 )}
               </View>
 
-              <View style={styles.noteFooter}>
-                <View style={styles.statBox}>
-                  <FontAwesome5 name="times-circle" size={14} color={colors.error} />
-                  <Text style={styles.footerText}>오답: {item.failCount}회</Text>
-                </View>
-                <View style={styles.statBox}>
-                  <FontAwesome5 name="clock" size={14} color="#888" />
-                  <Text style={styles.footerText}>{item.lastFailed}</Text>
+              <View style={styles.noteBody}>
+                <Text style={styles.conceptText}>{item.concept}</Text>
+                <View style={styles.metaRow}>
+                  <Text style={styles.failCountText}>오답 {item.fail_count}회</Text>
+                  <Text style={styles.lastFailText}>
+                    {new Date(item.last_failed_at).toLocaleDateString('ko-KR')} 마지막 오답
+                  </Text>
                 </View>
               </View>
 
-              <View style={styles.actionPrompt}>
-                <Text style={styles.actionText}>터치해서 다시 가르치기</Text>
-                <FontAwesome5 name="arrow-right" size={14} color={colors.primary} />
-              </View>
+              <TouchableOpacity
+                onPress={() => handleDelete(item)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <FontAwesome5 name="check" size={18} color={colors.success} />
+              </TouchableOpacity>
             </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Teach Again Action Modal */}
-      <Modal
-        visible={!!selectedWeakness}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setSelectedWeakness(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-
-            <View style={styles.modalHeader}>
-              <FontAwesome5 name="lightbulb" size={32} color="#FFD166" style={{ marginBottom: 12 }} />
-              <Text style={styles.modalTitle}>다시 가르치기</Text>
-              <Text style={styles.modalSubtitle}>
-                '{selectedWeakness?.concept}' 을(를) 어떻게 가르쳐볼까요?
-              </Text>
-            </View>
-
-            <View style={styles.modalActions}>
-              <CustomButton
-                title="개념부터 차근차근"
-                variant="primary"
-                iconName="book-open"
-                style={{ marginBottom: 12 }}
-                onPress={() => {
-                  setSelectedWeakness(null);
-                  navigation.navigate('Chat', { studentName, gender });
-                }}
-              />
-              <CustomButton
-                title="비슷한 문제 같이 풀기"
-                variant="colorful"
-                iconName="pen"
-                style={{ marginBottom: 12 }}
-                onPress={() => {
-                  const conceptToPass = selectedWeakness?.concept;
-                  setSelectedWeakness(null);
-                  navigation.navigate('Practice', { studentName, gender, concept: conceptToPass });
-                }}
-              />
-              <CustomButton
-                title="다음에 가르치기 (닫기)"
-                variant="secondary"
-                style={{ marginTop: 8 }}
-                onPress={() => setSelectedWeakness(null)}
-              />
-            </View>
-
-          </View>
-        </View>
-      </Modal>
-
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F5F0E6', // slightly darker pastel background for notes
-  },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   header: {
-    padding: 24,
-    paddingTop: 40,
-    backgroundColor: '#DDA7A5', // Pastel Coral/Red for danger/locker vibe
-    borderBottomWidth: 4,
-    borderBottomColor: '#C49391',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    marginBottom: 16,
+    backgroundColor: colors.secondaryDark,
+    paddingTop: 60, paddingBottom: 20, paddingHorizontal: 24,
   },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  headerIcon: {
-    marginRight: 12,
-  },
-  headerTitle: {
-    fontFamily: 'Jua_400Regular',
-    fontSize: 30,
-    color: '#FFF',
-  },
-  headerSubtitle: {
-    fontFamily: 'Jua_400Regular',
-    fontSize: 18,
-    color: '#FFF0F0',
-  },
-  listContainer: {
-    padding: 20,
-    gap: 20,
-  },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  headerTitle: { fontFamily: 'Jua_400Regular', fontSize: 26, color: '#FFF' },
+  headerSubtitle: { fontFamily: 'Jua_400Regular', fontSize: 15, color: 'rgba(255,255,255,0.75)' },
+  listContainer: { padding: 16, gap: 12, paddingBottom: 40 },
   noteItem: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#E5D6C5',
-    shadowColor: '#D4C5B3',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 3,
-    overflow: 'hidden',
+    flexDirection: 'row', alignItems: 'center', padding: 16,
+    borderRadius: 16, borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.06)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
   },
-  ribbon: {
-    width: 12,
+  noteIcon: { marginRight: 14, position: 'relative' },
+  dustBadge: {
+    position: 'absolute', top: -6, right: -6,
+    backgroundColor: colors.error, width: 16, height: 16,
+    borderRadius: 8, justifyContent: 'center', alignItems: 'center',
   },
-  ribbonDanger: {
-    backgroundColor: colors.error,
-  },
-  ribbonSafe: {
-    backgroundColor: colors.primary,
-  },
-  noteContent: {
-    flex: 1,
-    padding: 20,
-  },
-  noteHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  conceptText: {
-    fontFamily: 'Jua_400Regular',
-    fontSize: 22,
-    color: colors.textDark,
-  },
-  warningBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.error,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  warningText: {
-    fontFamily: 'Jua_400Regular',
-    color: '#FFF',
-    fontSize: 14,
-  },
-  noteFooter: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    gap: 16,
-  },
-  statBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F7F7F7',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    gap: 6,
-  },
-  footerText: {
-    fontFamily: 'Jua_400Regular',
-    fontSize: 16,
-    color: '#666',
-  },
-  actionPrompt: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 2,
-    borderStyle: 'dashed',
-    borderTopColor: '#EEE',
-    paddingTop: 16,
-  },
-  actionText: {
-    fontFamily: 'Jua_400Regular',
-    color: colors.primary,
-    fontSize: 18,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    width: '100%',
-    backgroundColor: '#FFF',
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10,
-    borderWidth: 3,
-    borderColor: '#EAE1D3',
-  },
-  modalHeader: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  modalTitle: {
-    fontFamily: 'Jua_400Regular',
-    fontSize: 26,
-    color: colors.primary,
-    marginBottom: 8,
-  },
-  modalSubtitle: {
-    fontFamily: 'Jua_400Regular',
-    fontSize: 18,
-    color: colors.textDark,
-    textAlign: 'center',
-  },
-  modalActions: {
-    width: '100%',
-  },
+  dustBadgeText: { fontFamily: 'Jua_400Regular', fontSize: 11, color: '#FFF' },
+  noteBody: { flex: 1 },
+  conceptText: { fontFamily: 'Jua_400Regular', fontSize: 18, color: colors.textDark, marginBottom: 4 },
+  metaRow: { flexDirection: 'row', gap: 12 },
+  failCountText: { fontFamily: 'Jua_400Regular', fontSize: 13, color: colors.error },
+  lastFailText: { fontFamily: 'Jua_400Regular', fontSize: 13, color: '#AAA' },
+  emptyContainer: { alignItems: 'center', paddingTop: 80, gap: 12 },
+  emptyTitle: { fontFamily: 'Jua_400Regular', fontSize: 22, color: colors.textDark },
+  emptySub: { fontFamily: 'Jua_400Regular', fontSize: 16, color: '#AAA' },
 });
