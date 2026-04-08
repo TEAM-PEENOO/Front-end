@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform } from 'react-native';
 import { useFonts, Jua_400Regular } from '@expo-google-fonts/jua';
 import { GamjaFlower_400Regular } from '@expo-google-fonts/gamja-flower';
 import { NavigationContainer } from '@react-navigation/native';
@@ -8,6 +8,22 @@ import * as WebBrowser from 'expo-web-browser';
 
 // 웹 플랫폼에서 OAuth 리디렉션 완료 처리 (반드시 최상단에 위치)
 WebBrowser.maybeCompleteAuthSession();
+
+// COOP 헤더로 인해 window.opener가 끊기는 문제 대응:
+// 팝업 창에서 콜백 URL로 돌아왔을 때 BroadcastChannel로 부모 창에 토큰 전달
+if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
+  const params = new URLSearchParams(window.location.search);
+  const hash = new URLSearchParams(window.location.hash.replace('#', '?').slice(1));
+  const token = params.get('access_token') || hash.get('access_token');
+  if (token && window.location.pathname.includes('auth/callback')) {
+    try {
+      const bc = new BroadcastChannel('oauth_callback');
+      bc.postMessage({ access_token: token });
+      bc.close();
+    } catch (_) {}
+    window.close();
+  }
+}
 
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 

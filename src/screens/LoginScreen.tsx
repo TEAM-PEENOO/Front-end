@@ -2,15 +2,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView,
-  TouchableOpacity, ActivityIndicator, Alert, Animated, Easing, Dimensions,
+  TouchableOpacity, ActivityIndicator, Alert, Animated, Easing, Dimensions, Platform,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../constants';
-
-WebBrowser.maybeCompleteAuthSession();
 
 const { width: SW } = Dimensions.get('window');
 
@@ -108,18 +106,51 @@ export const LoginScreen: React.FC = () => {
     try {
       const redirectUri = Linking.createURL('auth/callback');
       const authUrl = `${API_BASE_URL}/auth/google/login?redirect_uri=${encodeURIComponent(redirectUri)}`;
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
 
-      if (result.type === 'success') {
-        const url = new URL(result.url);
-        const token = url.searchParams.get('access_token');
-        if (!token) {
-          Alert.alert('로그인 실패', '인증 토큰을 받지 못했어요. 다시 시도해주세요.');
-          return;
+      if (Platform.OS === 'web') {
+        // COOP 헤더로 인해 window.opener / window.closed 접근이 막히는 문제 우회:
+        // BroadcastChannel로 팝업 → 부모 창 간 동일 origin 통신 사용
+        await new Promise<void>((resolve, reject) => {
+          const channel = new BroadcastChannel('oauth_callback');
+          let settled = false;
+
+          const settle = () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            channel.close();
+          };
+
+          channel.onmessage = async (event: MessageEvent) => {
+            settle();
+            const token: string | undefined = event.data?.access_token;
+            if (token) {
+              try { await loginWithToken(token); resolve(); }
+              catch (e) { reject(e); }
+            } else {
+              resolve(); // 토큰 없음 → 취소로 처리
+            }
+          };
+
+          // 팝업을 직접 열어 window.closed 폴링 의존성 제거
+          window.open(authUrl, 'google_oauth', 'width=500,height=650,left=300,top=100');
+
+          // 10분 타임아웃: 사용자가 팝업을 닫거나 미완료 시 로딩 해제
+          const timer = setTimeout(() => { settle(); resolve(); }, 10 * 60 * 1000);
+        });
+      } else {
+        const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+        if (result.type === 'success') {
+          const url = new URL(result.url);
+          const token = url.searchParams.get('access_token');
+          if (!token) {
+            Alert.alert('로그인 실패', '인증 토큰을 받지 못했어요. 다시 시도해주세요.');
+            return;
+          }
+          await loginWithToken(token);
+        } else if (result.type !== 'cancel') {
+          Alert.alert('로그인 실패', '인증에 실패했어요. 다시 시도해주세요.');
         }
-        await loginWithToken(token);
-      } else if (result.type !== 'cancel') {
-        Alert.alert('로그인 실패', '인증에 실패했어요. 다시 시도해주세요.');
       }
     } catch {
       Alert.alert('오류', '서버에 연결할 수 없어요. 잠시 후 다시 시도해주세요.');
