@@ -19,7 +19,7 @@ const HINTS = [
 export const PracticeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { studentName = '민이', gender = 'girl', concept = '소수의 나눗셈' } = route.params || {};
+  const { studentName = '', concept = '' } = route.params || {};
 
   const [studentState, setStudentState] = useState<StudentState>('confused');
   const [mode, setMode] = useState<Mode>('idle');
@@ -162,11 +162,11 @@ export const PracticeScreen: React.FC = () => {
           <View style={styles.bubbleTail} />
         </Animated.View>
 
-        <Avatar 
-          gender={gender} 
-          size={140} 
-          variant="face" 
-          style={styles.avatar} 
+        <Avatar
+          gender="girl"
+          size={140}
+          variant="face"
+          style={styles.avatar}
         />
       </View>
 

@@ -13,10 +13,14 @@ import {
   Dimensions,
   Easing,
   ImageBackground,
-  Image
+  Image,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { subjectsApi } from '../api/subjects';
+import { personasApi } from '../api/personas';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -24,6 +28,8 @@ type Personality = 'curious' | 'careful' | 'clumsy' | 'perfectionist';
 
 export const OnboardingScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const existingSubjectId: string | undefined = route.params?.existingSubjectId;
 
   // Form State
   const [subjectName, setSubjectName] = useState('');
@@ -31,6 +37,7 @@ export const OnboardingScreen: React.FC = () => {
   const [studentName, setStudentName] = useState('');
   const [gender, setGender] = useState<'boy' | 'girl'>('girl');
   const [personality, setPersonality] = useState<Personality | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Flow State
   const [currentStep, setCurrentStep] = useState(0);
@@ -150,39 +157,50 @@ export const OnboardingScreen: React.FC = () => {
     });
   };
 
-  const submitForm = () => {
-    // Stamp + Screen Shake
+  const submitForm = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+
+    // Stamp + Screen Shake 애니메이션
     Animated.parallel([
-      Animated.timing(stampOpacity, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.spring(stampScale, {
-        toValue: 1,
-        friction: 4,
-        tension: 100,
-        useNativeDriver: true,
-      }),
-      // Shake effect
+      Animated.timing(stampOpacity, { toValue: 1, duration: 100, useNativeDriver: true }),
+      Animated.spring(stampScale, { toValue: 1, friction: 4, tension: 100, useNativeDriver: true }),
       Animated.sequence([
-        Animated.delay(120), // Shake as it hits
+        Animated.delay(120),
         Animated.timing(shakeAnim, { toValue: 15, duration: 40, useNativeDriver: true }),
         Animated.timing(shakeAnim, { toValue: -15, duration: 40, useNativeDriver: true }),
         Animated.timing(shakeAnim, { toValue: 10, duration: 40, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 40, useNativeDriver: true })
+        Animated.timing(shakeAnim, { toValue: 0, duration: 40, useNativeDriver: true }),
       ])
-    ]).start(() => {
+    ]).start();
+
+    try {
+      // 1. 과목 생성 (기존 subjectId가 있으면 스킵)
+      let subjectId = existingSubjectId;
+      if (!subjectId) {
+        const subject = await subjectsApi.create(subjectName.trim(), subjectDesc.trim() || undefined);
+        subjectId = subject.id;
+      }
+
+      // 2. 페르소나 생성
+      await personasApi.create(subjectId, studentName.trim(), personality || 'curious');
+
       setTimeout(() => {
         navigation.navigate('CurriculumSetup', {
-          subjectName,
-          subjectDesc,
-          studentName,
+          subjectId,
+          subjectName: subjectName.trim(),
+          subjectDesc: subjectDesc.trim(),
+          studentName: studentName.trim(),
           gender,
-          personality: personality || 'curious'
+          personality: personality || 'curious',
         });
       }, 1200);
-    });
+    } catch (e: any) {
+      setSubmitting(false);
+      stampOpacity.setValue(0);
+      stampScale.setValue(5);
+      Alert.alert('오류', e?.response?.data?.error?.message || '저장에 실패했어요. 다시 시도해주세요.');
+    }
   };
 
   const getCharTransform = () => {
@@ -373,7 +391,7 @@ export const OnboardingScreen: React.FC = () => {
                 {studentName.trim().length > 0 && personality && (
                   <View style={styles.signatureRow}>
                     <View style={styles.signArea}>
-                      <Text style={styles.signLabel}>과외 선생님 서명: TEST</Text>
+                      <Text style={styles.signLabel}>과외 선생님 서명</Text>
                       <View style={styles.signLine}></View>
                     </View>
                     <TouchableOpacity style={styles.approvalBtn} onPress={submitForm}>
