@@ -24,13 +24,9 @@ export const Avatar: React.FC<AvatarProps> = ({
 }) => {
   let finalSource = source;
   if (!finalSource && gender === 'boy') {
-    finalSource = variant === 'face' 
-      ? require('../../assets/images/boy_face.png') 
-      : require('../../assets/images/boy_character.png');
+    finalSource = require('../../assets/images/boy_character.png');
   } else if (!finalSource && gender === 'girl') {
-    finalSource = variant === 'face'
-      ? require('../../assets/images/girl_face.png')
-      : require('../../assets/images/girl_character.png');
+    finalSource = require('../../assets/images/girl_character.png');
   }
 
   return (
