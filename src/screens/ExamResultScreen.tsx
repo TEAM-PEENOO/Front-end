@@ -12,7 +12,7 @@ export const ExamResultScreen: React.FC = () => {
   const {
     subjectId,
     result,
-    studentName = '민이',
+    studentName = '',
     subjectName = '',
   }: { subjectId: string; result: GradeResult; studentName: string; subjectName: string } = route.params || {};
 

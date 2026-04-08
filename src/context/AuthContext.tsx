@@ -7,8 +7,7 @@ import { User } from '../types';
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -35,14 +34,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })();
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await authApi.login(email, password);
-    setUser(res.user);
-  }, []);
-
-  const register = useCallback(async (email: string, password: string) => {
-    const res = await authApi.register(email, password);
-    setUser(res.user);
+  /** 백엔드 OAuth redirect로부터 받은 JWT 토큰을 저장하고 사용자 정보 로드 */
+  const loginWithToken = useCallback(async (token: string) => {
+    await authApi.saveToken(token);
+    const me = await authApi.me();
+    setUser(me);
   }, []);
 
   const logout = useCallback(async () => {
@@ -51,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, loginWithToken, logout }}>
       {children}
     </AuthContext.Provider>
   );

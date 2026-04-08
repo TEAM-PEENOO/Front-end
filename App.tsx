@@ -3,6 +3,10 @@ import { ActivityIndicator, View } from 'react-native';
 import { useFonts, Jua_400Regular } from '@expo-google-fonts/jua';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as WebBrowser from 'expo-web-browser';
+
+// 웹 플랫폼에서 OAuth 리디렉션 완료 처리 (반드시 최상단에 위치)
+WebBrowser.maybeCompleteAuthSession();
 
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 

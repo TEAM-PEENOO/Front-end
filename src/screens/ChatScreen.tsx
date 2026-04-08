@@ -22,7 +22,7 @@ interface Message {
 export const ChatScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { subjectId, studentName = '민이', personality = 'curious', subjectName = '' } = route.params || {};
+  const { subjectId, studentName = '', personality = 'curious', subjectName = '' } = route.params || {};
 
   // 주제 선택 상태
   const [curriculumItems, setCurriculumItems] = useState<CurriculumItem[]>([]);

@@ -391,7 +391,7 @@ export const OnboardingScreen: React.FC = () => {
                 {studentName.trim().length > 0 && personality && (
                   <View style={styles.signatureRow}>
                     <View style={styles.signArea}>
-                      <Text style={styles.signLabel}>과외 선생님 서명: TEST</Text>
+                      <Text style={styles.signLabel}>과외 선생님 서명</Text>
                       <View style={styles.signLine}></View>
                     </View>
                     <TouchableOpacity style={styles.approvalBtn} onPress={submitForm}>

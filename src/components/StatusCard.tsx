@@ -14,9 +14,9 @@ interface StatusCardProps {
 
 export const StatusCard: React.FC<StatusCardProps> = ({
   studentName,
-  subjectName = '웹 기초',
-  stageName = '1단계',
-  progressText = '0/4 완료',
+  subjectName,
+  stageName,
+  progressText,
   memoryRetention,
   style,
 }) => {

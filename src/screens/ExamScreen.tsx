@@ -14,7 +14,7 @@ import { Exam, ExamQuestion, UserAnswer } from '../types';
 export const ExamScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { subjectId, stageId, studentName = '민이', personality = 'curious', subjectName = '' } = route.params || {};
+  const { subjectId, stageId, studentName = '', personality = 'curious', subjectName = '' } = route.params || {};
 
   const [exam, setExam] = useState<Exam | null>(null);
   const [loading, setLoading] = useState(true);

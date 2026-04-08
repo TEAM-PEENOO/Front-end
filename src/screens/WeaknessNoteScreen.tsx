@@ -15,7 +15,7 @@ const DUST_COLORS = ['#E8F5E9', '#FFF9C4', '#FFECB3', '#FFCDD2', '#EF9A9A'];
 export const WeaknessNoteScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { subjectId, studentName = '제자' } = route.params || {};
+  const { subjectId, studentName = '' } = route.params || {};
 
   const [tags, setTags] = useState<WeakPointTag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +65,10 @@ export const WeaknessNoteScreen: React.FC = () => {
     return { backgroundColor: DUST_COLORS[idx] };
   };
 
+  const handlePractice = (item: WeakPointTag) => {
+    navigation.navigate('Practice', { subjectId, studentName, concept: item.concept });
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -75,7 +79,9 @@ export const WeaknessNoteScreen: React.FC = () => {
           <FontAwesome5 name="archive" size={28} color="#FFF" style={{ marginRight: 10 }} />
           <Text style={styles.headerTitle}>개념 사물함</Text>
         </View>
-        <Text style={styles.headerSubtitle}>{studentName}가 헷갈려하는 빈틈을 채워주세요!</Text>
+        <Text style={styles.headerSubtitle}>
+          {studentName ? `${studentName}가 헷갈려하는 빈틈을 채워주세요!` : '제자가 헷갈려하는 빈틈을 채워주세요!'}
+        </Text>
       </View>
 
       {loading ? (
@@ -99,11 +105,14 @@ export const WeaknessNoteScreen: React.FC = () => {
               <Text style={styles.emptySub}>시험을 잘 보고 있군요.</Text>
             </View>
           }
-          renderItem={({ item, index }) => (
-            <View style={[styles.noteItem, getDustStyle(item.fail_count)]}>
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[styles.noteItem, getDustStyle(item.fail_count)]}
+              onPress={() => handlePractice(item)}
+              activeOpacity={0.85}
+            >
               <View style={styles.noteIcon}>
                 <FontAwesome5 name="book" size={22} color={colors.secondaryDark} />
-                {/* fail_count가 높을수록 먼지 효과 */}
                 {item.fail_count >= 3 && (
                   <View style={styles.dustBadge}>
                     <Text style={styles.dustBadgeText}>!</Text>
@@ -119,15 +128,16 @@ export const WeaknessNoteScreen: React.FC = () => {
                     {new Date(item.last_failed_at).toLocaleDateString('ko-KR')} 마지막 오답
                   </Text>
                 </View>
+                <Text style={styles.practiceHint}>탭하여 복습 도와주기 →</Text>
               </View>
 
               <TouchableOpacity
-                onPress={() => handleDelete(item)}
+                onPress={(e) => { e.stopPropagation?.(); handleDelete(item); }}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <FontAwesome5 name="check" size={18} color={colors.success} />
               </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           )}
         />
       )}
@@ -162,6 +172,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', gap: 12 },
   failCountText: { fontFamily: 'Jua_400Regular', fontSize: 13, color: colors.error },
   lastFailText: { fontFamily: 'Jua_400Regular', fontSize: 13, color: '#AAA' },
+  practiceHint: { fontFamily: 'Jua_400Regular', fontSize: 12, color: colors.primary, marginTop: 4 },
   emptyContainer: { alignItems: 'center', paddingTop: 80, gap: 12 },
   emptyTitle: { fontFamily: 'Jua_400Regular', fontSize: 22, color: colors.textDark },
   emptySub: { fontFamily: 'Jua_400Regular', fontSize: 16, color: '#AAA' },
