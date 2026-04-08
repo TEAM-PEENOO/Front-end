@@ -22,26 +22,26 @@ export const WeaknessNoteScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.headerTitleRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{marginRight: 16}}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 16 }}>
             <FontAwesome5 name="arrow-left" size={24} color="#FFF" />
           </TouchableOpacity>
           <FontAwesome5 name="archive" size={28} color="#FFF" style={styles.headerIcon} />
-          <Text style={styles.headerTitle}>오답 사물함</Text>
+          <Text style={styles.headerTitle}>개념 사물함</Text>
         </View>
         <Text style={styles.headerSubtitle}>민이가 헷갈려하는 빈틈을 채워주세요!</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
         {MOCK_WEAKNESSES.sort((a, b) => b.failCount - a.failCount).map((item, index) => (
-          <TouchableOpacity 
-            key={item.id} 
-            style={styles.noteItem} 
+          <TouchableOpacity
+            key={item.id}
+            style={styles.noteItem}
             activeOpacity={0.8}
             onPress={() => setSelectedWeakness(item)}
           >
             {/* Warning Ribbon */}
             <View style={[styles.ribbon, item.failCount >= 3 ? styles.ribbonDanger : styles.ribbonSafe]} />
-            
+
             <View style={styles.noteContent}>
               <View style={styles.noteHeader}>
                 <Text style={styles.conceptText}>
@@ -49,12 +49,12 @@ export const WeaknessNoteScreen: React.FC = () => {
                 </Text>
                 {item.failCount >= 3 && (
                   <View style={styles.warningBadge}>
-                    <FontAwesome5 name="exclamation-triangle" size={12} color="#FFF" style={{marginRight: 4}} />
+                    <FontAwesome5 name="exclamation-triangle" size={12} color="#FFF" style={{ marginRight: 4 }} />
                     <Text style={styles.warningText}>긴급 복습!</Text>
                   </View>
                 )}
               </View>
-              
+
               <View style={styles.noteFooter}>
                 <View style={styles.statBox}>
                   <FontAwesome5 name="times-circle" size={14} color={colors.error} />
@@ -84,9 +84,9 @@ export const WeaknessNoteScreen: React.FC = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            
+
             <View style={styles.modalHeader}>
-              <FontAwesome5 name="lightbulb" size={32} color="#FFD166" style={{marginBottom: 12}} />
+              <FontAwesome5 name="lightbulb" size={32} color="#FFD166" style={{ marginBottom: 12 }} />
               <Text style={styles.modalTitle}>다시 가르치기</Text>
               <Text style={styles.modalSubtitle}>
                 '{selectedWeakness?.concept}' 을(를) 어떻게 가르쳐볼까요?
@@ -94,30 +94,31 @@ export const WeaknessNoteScreen: React.FC = () => {
             </View>
 
             <View style={styles.modalActions}>
-              <CustomButton 
-                title="개념부터 차근차근" 
-                variant="primary" 
+              <CustomButton
+                title="개념부터 차근차근"
+                variant="primary"
                 iconName="book-open"
-                style={{marginBottom: 12}}
+                style={{ marginBottom: 12 }}
                 onPress={() => {
                   setSelectedWeakness(null);
                   navigation.navigate('Chat', { studentName, gender });
                 }}
               />
-              <CustomButton 
-                title="비슷한 문제 같이 풀기" 
-                variant="colorful" 
+              <CustomButton
+                title="비슷한 문제 같이 풀기"
+                variant="colorful"
                 iconName="pen"
-                style={{marginBottom: 12}}
+                style={{ marginBottom: 12 }}
                 onPress={() => {
+                  const conceptToPass = selectedWeakness?.concept;
                   setSelectedWeakness(null);
-                  navigation.navigate('Chat', { studentName, gender });
+                  navigation.navigate('Practice', { studentName, gender, concept: conceptToPass });
                 }}
               />
-              <CustomButton 
-                title="다음에 가르치기 (닫기)" 
-                variant="secondary" 
-                style={{marginTop: 8}}
+              <CustomButton
+                title="다음에 가르치기 (닫기)"
+                variant="secondary"
+                style={{ marginTop: 8 }}
                 onPress={() => setSelectedWeakness(null)}
               />
             </View>

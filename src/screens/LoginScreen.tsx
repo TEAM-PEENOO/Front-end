@@ -11,35 +11,35 @@ export const LoginScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
+
         <View style={styles.logoContainer}>
           <FontAwesome5 name="seedling" size={80} color={colors.primary} style={styles.logoIcon} />
-          <Text style={styles.title}>나의 제자</Text>
-          <Text style={styles.subtitle}>My Jeja</Text>
+          <Text style={styles.title}>나만의 과외</Text>
+          <Text style={styles.subtitle}>My Personel Tutor</Text>
           <Text style={styles.description}>
             내가 선생님이 되어 AI 제자를 키우는 특별한 경험
           </Text>
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={[styles.loginBtn, { backgroundColor: '#FEE500', borderColor: '#E5CD00' }]} 
+          <TouchableOpacity
+            style={[styles.loginBtn, { backgroundColor: '#FEE500', borderColor: '#E5CD00' }]}
             onPress={() => navigation.navigate('Onboarding')}
           >
             <FontAwesome5 name="comment" size={20} color="#3C1E1E" style={styles.btnIcon} />
             <Text style={[styles.loginBtnText, { color: '#3C1E1E' }]}>카카오 계정으로 시작</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.loginBtn, { backgroundColor: '#FFFFFF', borderColor: '#E5D6C5' }]} 
+          <TouchableOpacity
+            style={[styles.loginBtn, { backgroundColor: '#FFFFFF', borderColor: '#E5D6C5' }]}
             onPress={() => navigation.navigate('Onboarding')}
           >
             <FontAwesome5 name="google" size={20} color="#EA4335" style={styles.btnIcon} />
             <Text style={[styles.loginBtnText, { color: colors.textDark }]}>Google 계정으로 시작</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.loginBtn, { backgroundColor: '#000000', borderColor: '#333' }]} 
+          <TouchableOpacity
+            style={[styles.loginBtn, { backgroundColor: '#000000', borderColor: '#333' }]}
             onPress={() => navigation.navigate('Onboarding')}
           >
             <FontAwesome5 name="apple" size={24} color="#FFF" style={styles.btnIcon} />

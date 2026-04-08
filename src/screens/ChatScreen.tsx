@@ -16,6 +16,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { Avatar } from '../components/Avatar';
 import { colors } from '../theme/colors';
 import { ResultModal } from '../components/ResultModal';
+import { CustomButton } from '../components/CustomButton';
 
 interface Message {
   id: string;
@@ -26,17 +27,26 @@ interface Message {
 export const ChatScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { studentName = '민이', gender = 'girl' } = route.params || {};
+  const { studentName = '민이', gender = 'girl', subjectName = '웹 기초', stages = [] } = route.params || {};
 
+  const currentStage = stages.length > 0 ? stages[0] : { name: '1단계', items: [{ id: '1', title: 'HTML 기본' }] };
+  const topics = currentStage.items || [];
+
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
   const [showResult, setShowResult] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'ai',
-      text: '선생님! 오늘은 분수의 덧셈에 대해 알려주신다고 하셨죠? 기대돼요!',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  const handleSelectTopic = (topic: string) => {
+    setSelectedTopic(topic);
+    setMessages([
+      {
+        id: '1',
+        sender: 'ai',
+        text: `선생님! 오늘은 [${topic}]에 대해 가르쳐주신다고 하셨죠? 기대돼요!`,
+      },
+    ]);
+  };
 
   const sendMessage = () => {
     if (!inputText.trim()) return;
@@ -53,11 +63,41 @@ export const ChatScreen: React.FC = () => {
         {
           id: (Date.now() + 1).toString(),
           sender: 'ai',
-          text: '아하! 분모가 다르면 분모를 똑같이 맞춰야 한다는 뜻인가요? 어떻게 맞추나요?',
+          text: `아하! 선생님 설명을 들으니까 ${selectedTopic}이 조금 이해되는 것 같아요! 정말인가요?`,
         },
       ]);
     }, 1500);
   };
+
+  if (!selectedTopic) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: '#FAF3E0' }]}>
+        <View style={styles.selectorHeader}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ position: 'absolute', top: 20, left: 20, zIndex: 10 }}>
+            <FontAwesome5 name="arrow-left" size={24} color={colors.textDark} />
+          </TouchableOpacity>
+          <Text style={styles.selectorTitle}>오늘의 수업 주제</Text>
+          <Text style={styles.selectorSubtitle}>{studentName}에게 무엇을 가르칠까요?</Text>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.topicList}>
+          {topics.map((item: any) => (
+            <TouchableOpacity 
+              key={item.id} 
+              style={styles.topicCard}
+              onPress={() => handleSelectTopic(item.title)}
+            >
+              <Text style={styles.topicCardText}>{item.title}</Text>
+              <FontAwesome5 name="chevron-right" size={16} color={colors.primary} />
+            </TouchableOpacity>
+          ))}
+          {topics.length === 0 && (
+            <Text style={styles.emptyText}>가르칠 수 있는 항목이 없습니다. 단계를 설정해주세요.</Text>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -65,23 +105,20 @@ export const ChatScreen: React.FC = () => {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Blackboard Background Pattern wrapping the chat */}
         <View style={styles.chatBackground}>
-          {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerInfo}>
-              <TouchableOpacity onPress={() => navigation.goBack()} style={{marginRight: 12}}>
+              <TouchableOpacity onPress={() => setSelectedTopic(null)} style={{marginRight: 12}}>
                 <FontAwesome5 name="arrow-left" size={24} color={colors.textDark} />
               </TouchableOpacity>
               <Avatar size={48} gender={gender} style={styles.headerAvatar} />
               <View>
-                <Text style={styles.headerTitle}>1학년 2반 수업 중...</Text>
-                <Text style={styles.headerSubtitle}>학생: {studentName}</Text>
+                <Text style={styles.headerTitle}>{subjectName} 수업 중...</Text>
+                <Text style={styles.headerSubtitle}>주제: {selectedTopic}</Text>
               </View>
             </View>
           </View>
 
-          {/* Messages */}
           <ScrollView
             contentContainerStyle={styles.messageContainer}
             showsVerticalScrollIndicator={false}
@@ -116,21 +153,20 @@ export const ChatScreen: React.FC = () => {
             ))}
           </ScrollView>
 
-          {/* Input Area */}
           <View style={styles.inputArea}>
             <TextInput
               style={styles.input}
-              placeholder="민이에게 부드럽게 설명해주세요..."
+              placeholder={`${studentName}에게 부드럽게 설명해주세요...`}
               placeholderTextColor="#A1A1A1"
               value={inputText}
               onChangeText={setInputText}
               multiline
             />
             <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-              <Text style={styles.sendButtonText}>가르치기</Text>
+              <Text style={styles.sendButtonText}>설명하기</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.endButton} onPress={() => setShowResult(true)}>
-              <Text style={styles.sendButtonText}>수업 종료</Text>
+              <Text style={styles.sendButtonText}>종료</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -138,7 +174,7 @@ export const ChatScreen: React.FC = () => {
 
       <ResultModal 
         visible={showResult} 
-        score={84} 
+        score={88} 
         onClose={() => {
           setShowResult(false);
           navigation.navigate('Home');
@@ -159,15 +195,59 @@ const styles = StyleSheet.create({
   chatBackground: {
     flex: 1,
   },
+  selectorHeader: {
+    paddingTop: 60,
+    paddingBottom: 20,
+    alignItems: 'center',
+  },
+  selectorTitle: {
+    fontFamily: 'Jua_400Regular',
+    fontSize: 32,
+    color: colors.primary,
+    marginBottom: 8,
+  },
+  selectorSubtitle: {
+    fontFamily: 'Jua_400Regular',
+    fontSize: 16,
+    color: colors.secondaryDark,
+  },
+  topicList: {
+    padding: 24,
+  },
+  topicCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#EAE1D3',
+    elevation: 2,
+  },
+  topicCardText: {
+    fontFamily: 'Jua_400Regular',
+    fontSize: 20,
+    color: colors.textDark,
+  },
+  emptyText: {
+    fontFamily: 'Jua_400Regular',
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 40,
+  },
   header: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFDF9',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 4,
-    borderBottomColor: colors.secondaryDark,
+    borderBottomColor: '#EAE1D3',
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
     marginBottom: 8,
+    paddingTop: Platform.OS === 'ios' ? 40 : 20,
   },
   headerInfo: {
     flexDirection: 'row',
@@ -185,8 +265,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14, fontFamily: "Jua_400Regular",
     color: colors.primary,
-    fontWeight: '600',
-    marginTop: 2,
+    marginTop: 4,
   },
   messageContainer: {
     padding: 16,
@@ -224,13 +303,12 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   bubbleAI: {
-    backgroundColor: colors.chatAI,
+    backgroundColor: '#FFFDF9',
     borderBottomLeftRadius: 4,
   },
   messageText: {
     fontSize: 16, fontFamily: "Jua_400Regular",
     lineHeight: 22,
-    fontWeight: '500',
   },
   textUser: {
     color: '#FFFFFF',
@@ -240,13 +318,13 @@ const styles = StyleSheet.create({
   },
   inputArea: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFDF9',
     paddingHorizontal: 16,
     paddingVertical: 12,
     paddingBottom: Platform.OS === 'ios' ? 24 : 12,
     alignItems: 'center',
     borderTopWidth: 2,
-    borderTopColor: colors.secondaryDark,
+    borderTopColor: '#EAE1D3',
   },
   input: {
     flex: 1,
@@ -257,7 +335,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     fontSize: 16, fontFamily: "Jua_400Regular",
     maxHeight: 100,
-    borderColor: colors.border,
+    borderColor: '#EAE1D3',
     borderWidth: 1,
     color: colors.textDark,
   },
@@ -266,22 +344,21 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   endButton: {
-    backgroundColor: colors.secondaryDark,
+    backgroundColor: '#FF6B6B',
     marginLeft: 8,
     borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendButtonText: {
     color: colors.textLight,
-    fontWeight: 'bold',
     fontSize: 16, fontFamily: "Jua_400Regular",
   },
 });

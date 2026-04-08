@@ -1,5 +1,5 @@
 // src/components/CustomButton.tsx
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -8,15 +8,19 @@ import {
   ViewStyle,
   TextStyle,
   View,
+  StyleProp,
+  Animated,
 } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+
 interface CustomButtonProps extends TouchableOpacityProps {
   title: string;
   variant?: 'primary' | 'secondary' | 'danger' | 'colorful';
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   iconName?: string;
   iconFamily?: 'FontAwesome5' | 'Ionicons';
   iconColor?: string;
@@ -30,8 +34,32 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   iconName,
   iconFamily = 'FontAwesome5',
   iconColor = '#FFF',
+  onPressIn,
+  onPressOut,
   ...props
 }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = (e: any) => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.94,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 15,
+    }).start();
+    if (onPressIn) onPressIn(e);
+  };
+
+  const handlePressOut = (e: any) => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 15,
+    }).start();
+    if (onPressOut) onPressOut(e);
+  };
+
   const getBackgroundColor = () => {
     switch (variant) {
       case 'secondary':
@@ -64,14 +92,17 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
+    <AnimatedTouchableOpacity
+      activeOpacity={0.9}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       style={[
         styles.container,
         { 
           backgroundColor: getBackgroundColor(),
           borderColor: getBorderColor(),
           borderBottomWidth: 5, // Gives a 3D clickable button feel
+          transform: [{ scale: scaleAnim }],
         },
         style,
       ]}
@@ -89,7 +120,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
       <Text style={[styles.text, { color: getTextColor(), fontFamily: 'Jua_400Regular' }, textStyle]}>
         {title}
       </Text>
-    </TouchableOpacity>
+    </AnimatedTouchableOpacity>
   );
 };
 
