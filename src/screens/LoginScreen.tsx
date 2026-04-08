@@ -219,12 +219,6 @@ export const LoginScreen: React.FC = () => {
             },
           ]}
         >
-          {/* 풀잎 장식선 */}
-          <View style={styles.grassRow}>
-            {['🌿','🍀','🌱','🍀','🌿','🌱','🍀','🌿'].map((g, i) => (
-              <Text key={i} style={styles.grass}>{g}</Text>
-            ))}
-          </View>
 
           <View style={styles.buttonCard}>
             <TouchableOpacity
@@ -307,7 +301,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   subtitle: {
-    fontFamily: 'GamjaFlower_400Regular',
+    fontFamily: 'Jua_400Regular',
     fontSize: 22,
     color: '#FF9800',
     marginBottom: 12,
@@ -369,7 +363,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   googleBtnText: {
-    fontFamily: 'GamjaFlower_400Regular',
+    fontFamily: 'Jua_400Regular',
     fontSize: 22,
     color: '#444',
   },
