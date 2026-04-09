@@ -268,7 +268,7 @@ export const OnboardingScreen: React.FC = () => {
                   <Text style={styles.label}>[ 1 ] 선생님의 과목은 무엇입니까?</Text>
                   <TextInput
                     style={styles.fountainPenInput}
-                    placeholder="만년필로 적듯 과목명을 적어주세요..."
+                    placeholder="과목명을 적어주세요. (예: 수학, 영어, 코딩)"
                     value={subjectName}
                     onChangeText={setSubjectName}
                     placeholderTextColor="rgba(26, 26, 36, 0.3)"

@@ -11,8 +11,8 @@ export const authApi = {
 
   /** 저장된 JWT로 내 정보 조회 */
   me: async (): Promise<User> => {
-    const res = await apiClient.get<User>('/auth/me');
-    return res.data;
+    const res = await apiClient.get<{ data: User }>('/auth/me');
+    return res.data.data;
   },
 
   logout: async (): Promise<void> => {
