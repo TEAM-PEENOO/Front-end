@@ -15,13 +15,18 @@ if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof BroadcastCh
   const params = new URLSearchParams(window.location.search);
   const hash = new URLSearchParams(window.location.hash.replace('#', '?').slice(1));
   const token = params.get('access_token') || hash.get('access_token');
-  if (token && window.location.pathname.includes('auth/callback')) {
+  // window.name === 'google_oauth': window.open() 시 지정한 이름으로 팝업 여부 확인 (경로 무관하게 신뢰성 높음)
+  // pathname 체크는 fallback으로 유지
+  const isOAuthPopup = window.name === 'google_oauth' || window.location.pathname.includes('auth/callback');
+  if (token && isOAuthPopup) {
     try {
       const bc = new BroadcastChannel('oauth_callback');
       bc.postMessage({ access_token: token });
-      bc.close();
-    } catch (_) {}
-    window.close();
+      // 메시지 전달 후 약간의 딜레이를 두고 닫기 (브라우저별 전달 보장)
+      setTimeout(() => { bc.close(); window.close(); }, 300);
+    } catch (_) {
+      window.close();
+    }
   }
 }
 
@@ -97,6 +102,7 @@ function AppNavigator() {
 
   return (
     <Stack.Navigator
+      key={user ? 'authenticated' : 'unauthenticated'}
       screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       initialRouteName={user ? 'SubjectList' : 'Login'}
     >
