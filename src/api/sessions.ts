@@ -16,27 +16,27 @@ interface EndSessionResult {
 }
 
 export const sessionsApi = {
-  list: async (subjectId: string, params?: SessionListParams): Promise<{ data: TeachingSession[]; total: number }> => {
-    const res = await apiClient.get<{ data: { data: TeachingSession[]; total: number } }>(
+  list: async (subjectId: string, params?: SessionListParams): Promise<TeachingSession[]> => {
+    const res = await apiClient.get<TeachingSession[]>(
       `/subjects/${subjectId}/persona/sessions`,
       { params }
     );
-    return res.data.data;
+    return res.data;
   },
 
   get: async (subjectId: string, sessionId: string): Promise<TeachingSession> => {
-    const res = await apiClient.get<{ data: TeachingSession }>(
+    const res = await apiClient.get<TeachingSession>(
       `/subjects/${subjectId}/persona/sessions/${sessionId}`
     );
-    return res.data.data;
+    return res.data;
   },
 
-  create: async (subjectId: string, concept: string, curriculum_item_id?: string): Promise<TeachingSession> => {
-    const res = await apiClient.post<{ data: TeachingSession }>(
+  create: async (subjectId: string, concept: string, curriculum_item_id?: string): Promise<{ id: string }> => {
+    const res = await apiClient.post<{ session_id: string }>(
       `/subjects/${subjectId}/persona/sessions`,
       { concept, curriculum_item_id }
     );
-    return res.data.data;
+    return { id: res.data.session_id };
   },
 
   /** SSE 스트리밍 채팅 — onDelta로 토큰 단위 업데이트 */
@@ -54,10 +54,10 @@ export const sessionsApi = {
   },
 
   end: async (subjectId: string, sessionId: string): Promise<EndSessionResult> => {
-    const res = await apiClient.post<{ data: EndSessionResult }>(
+    const res = await apiClient.post<EndSessionResult>(
       `/subjects/${subjectId}/persona/sessions/${sessionId}/end`
     );
-    return res.data.data;
+    return res.data;
   },
 
   delete: async (subjectId: string, sessionId: string): Promise<void> => {
