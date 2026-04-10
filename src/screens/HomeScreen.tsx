@@ -27,14 +27,21 @@ export const HomeScreen: React.FC = () => {
 
   const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [examModalVisible, setExamModalVisible] = useState(false);
 
   const fetchProgress = useCallback(async () => {
+    if (!subjectId) {
+      setFetchError(true);
+      setLoading(false);
+      return;
+    }
     try {
+      setFetchError(false);
       const data = await progressApi.get(subjectId);
       setProgress(data);
     } catch {
-      Alert.alert('오류', '학습 현황을 불러오지 못했어요.');
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -145,6 +152,29 @@ export const HomeScreen: React.FC = () => {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={colors.primary} />
+      </SafeAreaView>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FAF3E0', justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+        <FontAwesome5 name="exclamation-circle" size={48} color={colors.secondary} />
+        <Text style={{ fontFamily: 'Jua_400Regular', fontSize: 20, color: colors.textDark, marginTop: 20, textAlign: 'center' }}>
+          학습 현황을 불러오지 못했어요
+        </Text>
+        <Text style={{ fontFamily: 'Jua_400Regular', fontSize: 15, color: '#999', marginTop: 8, textAlign: 'center' }}>
+          제자 설정이 완료되지 않았거나{'\n'}네트워크 오류가 발생했어요
+        </Text>
+        <TouchableOpacity
+          onPress={() => { setLoading(true); fetchProgress(); }}
+          style={{ marginTop: 24, backgroundColor: colors.primary, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14 }}
+        >
+          <Text style={{ fontFamily: 'Jua_400Regular', fontSize: 17, color: '#FFF' }}>다시 시도</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 16 }}>
+          <Text style={{ fontFamily: 'Jua_400Regular', fontSize: 15, color: colors.secondary }}>← 과목 목록으로</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
