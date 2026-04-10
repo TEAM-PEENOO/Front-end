@@ -49,7 +49,7 @@ export const HomeScreen: React.FC = () => {
   const studentName = progress?.persona.name ?? '';
   const personality = progress?.persona.personality ?? 'curious';
   const currentStage = progress?.current_stage ?? null;
-  const memoryRetention = Math.round((progress?.overall_retention ?? 0) * 100);
+  const memoryRetention = Math.round(progress?.overall_retention ?? 0);
   const examUnlocked = currentStage?.exam_unlocked ?? false;
   const untaughtCount = currentStage?.untaught_count ?? 0;
   const progressText = currentStage
