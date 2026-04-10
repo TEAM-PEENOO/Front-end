@@ -8,6 +8,6 @@ spec:
     app: prove-web
   ports:
     - name: http
-      port: 80
-      targetPort: 80
+      port: 12568       # 호스트에서 klipper-lb가 바인딩하는 포트 (NGINX Proxy Manager가 바라보는 포트)
+      targetPort: 80    # 컨테이너 내부 nginx 포트
   type: LoadBalancer
