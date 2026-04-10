@@ -66,6 +66,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = useCallback(async () => {
     await authApi.logout();
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.reload();
+      return;
+    }
     setUser(null);
   }, []);
 
