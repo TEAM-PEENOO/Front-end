@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, FlatList,
-  TouchableOpacity, ActivityIndicator, Alert, RefreshControl,
+  TouchableOpacity, Pressable, ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -97,12 +97,16 @@ export const SubjectListScreen: React.FC = () => {
           <Text style={styles.headerTitle}>나의 제자</Text>
           <Text style={styles.headerSub}>내가 만든 과목 목록</Text>
         </View>
-        <TouchableOpacity onPress={() => {
-          Alert.alert('로그아웃', '로그아웃 할까요?', [
-            { text: '취소', style: 'cancel' },
-            { text: '로그아웃', onPress: logout },
-          ]);
-        }}>
+        <TouchableOpacity
+          onPress={() => {
+            Alert.alert('로그아웃', '로그아웃 할까요?', [
+              { text: '취소', style: 'cancel' },
+              { text: '로그아웃', onPress: logout },
+            ]);
+          }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={{ padding: 8 }}
+        >
           <FontAwesome5 name="sign-out-alt" size={22} color={colors.secondaryDark} />
         </TouchableOpacity>
       </View>
@@ -120,9 +124,8 @@ export const SubjectListScreen: React.FC = () => {
           </View>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            activeOpacity={0.85}
+          <Pressable
+            style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
             onPress={() => handleEnter(item)}
           >
             {/* 카드 좌측 컬러 바 */}
@@ -131,7 +134,11 @@ export const SubjectListScreen: React.FC = () => {
             <View style={styles.cardBody}>
               <View style={styles.cardTop}>
                 <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
-                <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <TouchableOpacity
+                  onPress={() => handleDelete(item)}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  style={{ padding: 6 }}
+                >
                   <FontAwesome5 name="trash-alt" size={16} color="#CCC" />
                 </TouchableOpacity>
               </View>
@@ -156,7 +163,7 @@ export const SubjectListScreen: React.FC = () => {
             </View>
 
             <FontAwesome5 name="chevron-right" size={16} color={colors.primaryLight} style={{ alignSelf: 'center', marginRight: 16 }} />
-          </TouchableOpacity>
+          </Pressable>
         )}
       />
 
@@ -209,7 +216,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
@@ -218,6 +224,8 @@ const styles = StyleSheet.create({
   },
   cardAccent: {
     width: 6,
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
   },
   cardBody: {
     flex: 1,
