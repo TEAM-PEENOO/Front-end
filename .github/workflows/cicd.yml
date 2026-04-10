@@ -184,7 +184,7 @@ jobs:
       - name: Wait for rollout
         run: |
           kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} \
-            -n ${{ env.NAMESPACE }} --timeout=5m || {
+            -n ${{ env.NAMESPACE }} --timeout=2m || {
             echo "=== Pods ==="
             kubectl get pods -n ${{ env.NAMESPACE }} -o wide
             echo "=== Events ==="

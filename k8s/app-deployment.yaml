@@ -13,6 +13,7 @@ spec:
       labels:
         app: prove-web
     spec:
+      terminationGracePeriodSeconds: 10
       containers:
         - name: prove-web
           image: ghcr.io/team-peenoo/prove:latest
