@@ -84,7 +84,7 @@ export const HomeScreen: React.FC = () => {
 
   useEffect(() => {
     Animated.stagger(150, [
-      Animated.spring(entSign, { toValue: 1, friction: 5, tension: 40, useNativeDriver: true }),
+      Animated.timing(entSign, { toValue: 1, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       Animated.spring(entChar, { toValue: 1, friction: 6, tension: 50, useNativeDriver: true }),
       Animated.spring(entBubble, { toValue: 1, friction: 4, tension: 70, useNativeDriver: true }),
       Animated.spring(entStatus, { toValue: 1, friction: 7, tension: 50, useNativeDriver: true }),
