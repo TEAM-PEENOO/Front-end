@@ -187,6 +187,16 @@ export const HomeScreen: React.FC = () => {
         style={styles.bgImage}
         imageStyle={{ opacity: 0.85 }}
       >
+        {/* 과목 선택 버튼 (좌상단) */}
+        <TouchableOpacity
+          style={styles.subjectSelectBtn}
+          onPress={() => navigation.navigate('SubjectList')}
+          activeOpacity={0.85}
+        >
+          <FontAwesome5 name="th-list" size={14} color="#FFF" style={{ marginRight: 6 }} />
+          <Text style={styles.subjectSelectText}>과목 선택</Text>
+        </TouchableOpacity>
+
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
 
           {/* 헤더 */}
@@ -308,16 +318,6 @@ export const HomeScreen: React.FC = () => {
         </ScrollView>
       </ImageBackground>
 
-      {/* 과목 선택 버튼 (좌상단) */}
-      <TouchableOpacity
-        style={styles.subjectSelectBtn}
-        onPress={() => navigation.navigate('SubjectList')}
-        activeOpacity={0.85}
-      >
-        <FontAwesome5 name="th-list" size={14} color="#FFF" style={{ marginRight: 6 }} />
-        <Text style={styles.subjectSelectText}>과목 선택</Text>
-      </TouchableOpacity>
-
       {/* 시험 확인 모달 */}
       <Modal visible={examModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
   startExamBtnText: { fontFamily: 'Jua_400Regular', fontSize: 18, color: '#FFF' },
   subjectSelectBtn: {
     position: 'absolute',
-    top: 56,
+    top: 20,
     left: 16,
     flexDirection: 'row',
     alignItems: 'center',

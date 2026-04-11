@@ -192,7 +192,7 @@ export const ChatScreen: React.FC = () => {
 
         {/* 헤더 */}
         <View style={styles.chatHeader}>
-          <TouchableOpacity onPress={() => setSelectedItem(null)} style={{ marginRight: 12 }}>
+          <TouchableOpacity onPress={() => { setSelectedItem(null); setMessages([]); setSessionId(null); }} style={{ marginRight: 12 }}>
             <FontAwesome5 name="arrow-left" size={22} color="#FFF" />
           </TouchableOpacity>
           <Avatar size={40} style={styles.chatAvatar} />
