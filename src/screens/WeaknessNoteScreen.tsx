@@ -8,6 +8,7 @@ import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/nativ
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { weakPointsApi } from '../api/weakPoints';
+import { josa } from '../utils/korean';
 import { WeakPointTag } from '../types';
 
 const DUST_COLORS = ['#E8F5E9', '#FFF9C4', '#FFECB3', '#FFCDD2', '#EF9A9A'];
@@ -80,7 +81,7 @@ export const WeaknessNoteScreen: React.FC = () => {
           <Text style={styles.headerTitle}>개념 사물함</Text>
         </View>
         <Text style={styles.headerSubtitle}>
-          {studentName ? `${studentName}가 헷갈려하는 빈틈을 채워주세요!` : '제자가 헷갈려하는 빈틈을 채워주세요!'}
+          {studentName ? `${studentName}${josa(studentName, '이', '')}가 헷갈려하는 빈틈을 채워주세요!` : '제자가 헷갈려하는 빈틈을 채워주세요!'}
         </Text>
       </View>
 

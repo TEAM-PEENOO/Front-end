@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, FlatList,
-  TouchableOpacity, Pressable, ActivityIndicator, Alert, RefreshControl,
+  TouchableOpacity, Pressable, ActivityIndicator, Alert, RefreshControl, Platform,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -92,10 +92,14 @@ export const SubjectListScreen: React.FC = () => {
         </View>
         <TouchableOpacity
           onPress={() => {
-            Alert.alert('로그아웃', '로그아웃 할까요?', [
-              { text: '취소', style: 'cancel' },
-              { text: '로그아웃', onPress: logout },
-            ]);
+            if (Platform.OS === 'web') {
+              if (window.confirm('로그아웃 할까요?')) logout();
+            } else {
+              Alert.alert('로그아웃', '로그아웃 할까요?', [
+                { text: '취소', style: 'cancel' },
+                { text: '로그아웃', onPress: logout },
+              ]);
+            }
           }}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={{ padding: 8 }}
