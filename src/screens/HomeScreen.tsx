@@ -79,7 +79,6 @@ export const HomeScreen: React.FC = () => {
   const entBoard = useRef(new Animated.Value(0)).current;
   const idleHover = useRef(new Animated.Value(0)).current;
   const idleBreathe = useRef(new Animated.Value(1)).current;
-  const swingRot = useRef(new Animated.Value(0)).current;
   const sparkY = useRef(new Animated.Value(0)).current;
   const sparkOp = useRef(new Animated.Value(0)).current;
 
@@ -103,11 +102,6 @@ export const HomeScreen: React.FC = () => {
     ])).start();
 
     Animated.loop(Animated.sequence([
-      Animated.timing(swingRot, { toValue: 1, duration: 3500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      Animated.timing(swingRot, { toValue: -1, duration: 3500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-    ])).start();
-
-    Animated.loop(Animated.sequence([
       Animated.parallel([
         Animated.timing(sparkY, { toValue: -1, duration: 2500, useNativeDriver: true }),
         Animated.sequence([
@@ -122,7 +116,6 @@ export const HomeScreen: React.FC = () => {
 
   const signTransform = [
     { translateY: entSign.interpolate({ inputRange: [0, 1], outputRange: [-100, 0] }) },
-    { rotate: swingRot.interpolate({ inputRange: [-1, 1], outputRange: ['-3deg', '3deg'] }) },
   ];
   const charTransform = [
     { translateY: entChar.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) },
@@ -315,6 +308,16 @@ export const HomeScreen: React.FC = () => {
         </ScrollView>
       </ImageBackground>
 
+      {/* 과목 선택 버튼 (좌상단) */}
+      <TouchableOpacity
+        style={styles.subjectSelectBtn}
+        onPress={() => navigation.navigate('SubjectList')}
+        activeOpacity={0.85}
+      >
+        <FontAwesome5 name="th-list" size={14} color="#FFF" style={{ marginRight: 6 }} />
+        <Text style={styles.subjectSelectText}>과목 선택</Text>
+      </TouchableOpacity>
+
       {/* 시험 확인 모달 */}
       <Modal visible={examModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -431,4 +434,17 @@ const styles = StyleSheet.create({
   cancelBtnText: { fontFamily: 'Jua_400Regular', fontSize: 16, color: '#888' },
   startExamBtn: { flex: 1.5, backgroundColor: colors.accent, paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
   startExamBtnText: { fontFamily: 'Jua_400Regular', fontSize: 18, color: '#FFF' },
+  subjectSelectBtn: {
+    position: 'absolute',
+    top: 56,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 100,
+  },
+  subjectSelectText: { fontFamily: 'Jua_400Regular', fontSize: 14, color: '#FFF' },
 });

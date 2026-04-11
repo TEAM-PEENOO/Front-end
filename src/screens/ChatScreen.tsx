@@ -107,11 +107,27 @@ export const ChatScreen: React.FC = () => {
   };
 
   // 세션 종료
-  const handleEndSession = async () => {
+  const handleEndSession = () => {
     if (!sessionId || ending) return;
+    if (Platform.OS === 'web') {
+      if (!window.confirm('수업을 종료할까요?\n종료하면 약점 개념이 정리되고 수업이 완료됩니다.')) return;
+      doEndSession();
+    } else {
+      Alert.alert(
+        '수업 종료',
+        '수업을 종료할까요?\n종료하면 약점 개념이 정리되고 수업이 완료됩니다.',
+        [
+          { text: '계속 가르치기', style: 'cancel' },
+          { text: '종료하기', style: 'destructive', onPress: doEndSession },
+        ]
+      );
+    }
+  };
+
+  const doEndSession = async () => {
     setEnding(true);
     try {
-      const result = await sessionsApi.end(subjectId, sessionId);
+      const result = await sessionsApi.end(subjectId, sessionId!);
       setEndResult(result);
       setShowEndModal(true);
     } catch {
