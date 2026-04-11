@@ -44,25 +44,29 @@ export const SubjectListScreen: React.FC = () => {
   }, [fetchSubjects]));
 
   const handleDelete = (subject: Subject) => {
-    Alert.alert(
-      '과목 삭제',
-      `"${subject.name}" 과목과 모든 학습 기록이 삭제됩니다. 계속할까요?`,
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '삭제',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await subjectsApi.delete(subject.id);
-              setSubjects(prev => prev.filter(s => s.id !== subject.id));
-            } catch {
-              Alert.alert('오류', '삭제에 실패했어요.');
-            }
-          },
-        },
-      ]
-    );
+    const doDelete = async () => {
+      try {
+        await subjectsApi.delete(subject.id);
+        setSubjects(prev => prev.filter(s => s.id !== subject.id));
+      } catch {
+        Alert.alert('오류', '삭제에 실패했어요.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(`"${subject.name}" 과목과 모든 학습 기록이 삭제됩니다. 계속할까요?`)) {
+        doDelete();
+      }
+    } else {
+      Alert.alert(
+        '과목 삭제',
+        `"${subject.name}" 과목과 모든 학습 기록이 삭제됩니다. 계속할까요?`,
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '삭제', style: 'destructive', onPress: doDelete },
+        ]
+      );
+    }
   };
 
   const handleEnter = (subject: Subject) => {
@@ -91,9 +95,9 @@ export const SubjectListScreen: React.FC = () => {
           <Text style={styles.headerSub}>내가 만든 과목 목록</Text>
         </View>
         <TouchableOpacity
-          onPress={() => {
+          onPress={async () => {
             if (Platform.OS === 'web') {
-              if (window.confirm('로그아웃 할까요?')) logout();
+              if (window.confirm('로그아웃 할까요?')) await logout();
             } else {
               Alert.alert('로그아웃', '로그아웃 할까요?', [
                 { text: '취소', style: 'cancel' },

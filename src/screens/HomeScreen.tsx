@@ -72,7 +72,6 @@ export const HomeScreen: React.FC = () => {
     : '0/0 완료';
 
   // ── 애니메이션 ────────────────────────────────────────────────────
-  const entSign = useRef(new Animated.Value(0)).current;
   const entChar = useRef(new Animated.Value(0)).current;
   const entBubble = useRef(new Animated.Value(0)).current;
   const entStatus = useRef(new Animated.Value(0)).current;
@@ -84,7 +83,6 @@ export const HomeScreen: React.FC = () => {
 
   useEffect(() => {
     Animated.stagger(150, [
-      Animated.timing(entSign, { toValue: 1, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       Animated.spring(entChar, { toValue: 1, friction: 6, tension: 50, useNativeDriver: true }),
       Animated.spring(entBubble, { toValue: 1, friction: 4, tension: 70, useNativeDriver: true }),
       Animated.spring(entStatus, { toValue: 1, friction: 7, tension: 50, useNativeDriver: true }),
@@ -114,9 +112,6 @@ export const HomeScreen: React.FC = () => {
     ])).start();
   }, []);
 
-  const signTransform = [
-    { translateY: entSign.interpolate({ inputRange: [0, 1], outputRange: [-100, 0] }) },
-  ];
   const charTransform = [
     { translateY: entChar.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) },
     { scale: entChar.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }) },
@@ -200,7 +195,7 @@ export const HomeScreen: React.FC = () => {
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
 
           {/* 헤더 */}
-          <Animated.View style={[styles.headerWrapper, { transform: signTransform, opacity: entSign }]}>
+          <View style={styles.headerWrapper}>
             <View style={styles.ropeLeft} />
             <View style={styles.ropeRight} />
             <View style={styles.header}>
@@ -210,7 +205,7 @@ export const HomeScreen: React.FC = () => {
               </View>
               <Text style={styles.headerSubtitle}>오늘도 {studentName}에게 배움을 전해볼까요?</Text>
             </View>
-          </Animated.View>
+          </View>
 
           {/* 캐릭터 */}
           <View style={styles.stageContainer}>

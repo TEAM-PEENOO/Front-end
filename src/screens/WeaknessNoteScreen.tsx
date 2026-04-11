@@ -74,7 +74,7 @@ export const WeaknessNoteScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.headerTitleRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 16 }}>
+          <TouchableOpacity onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home', { subjectId })} style={{ marginRight: 16 }}>
             <FontAwesome5 name="arrow-left" size={24} color="#FFF" />
           </TouchableOpacity>
           <FontAwesome5 name="archive" size={28} color="#FFF" style={{ marginRight: 10 }} />
