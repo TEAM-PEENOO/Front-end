@@ -2,6 +2,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../constants';
+import { triggerForceLogout } from './authCallbacks';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -18,12 +19,23 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
-// 401 응답 시 토큰 제거 (앱에서 로그아웃 처리는 AuthContext에서)
+// 백엔드 미들웨어가 성공 응답을 {"data": ...} 형태로 래핑함 → 자동 언래핑
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (
+      response.data &&
+      typeof response.data === 'object' &&
+      !Array.isArray(response.data) &&
+      'data' in response.data
+    ) {
+      response.data = response.data.data;
+    }
+    return response;
+  },
   async (error) => {
     if (error.response?.status === 401) {
       await AsyncStorage.removeItem('access_token');
+      triggerForceLogout(); // AuthContext에 등록된 logout 호출 → 로그인 화면으로 이동
     }
     return Promise.reject(error);
   }
@@ -68,7 +80,7 @@ export async function streamFetch(
       try {
         const parsed = JSON.parse(raw);
         if (parsed.done) return;
-        if (parsed.delta) onDelta(parsed.delta);
+        if (parsed.text) onDelta(parsed.text);
       } catch {
         // 파싱 실패는 무시
       }

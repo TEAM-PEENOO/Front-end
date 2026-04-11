@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authApi } from '../api/auth';
+import { registerForceLogout } from '../api/authCallbacks';
 import { User } from '../types';
 
 /**
@@ -33,27 +34,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // 앱 시작 시 저장된 토큰으로 사용자 정보 복원
   useEffect(() => {
-    // OAuth 팝업 창은 초기 auth check를 건너뜀:
-    // 팝업과 parent가 localStorage를 공유하기 때문에, 팝업에서 authApi.me()를
-    // 호출하면 parent의 loginWithToken과 race condition이 발생해
-    // 토큰을 삭제(401 interceptor)해버릴 수 있음.
+    // OAuth 팝업 창은 초기 auth check를 건너뜀
     if (isOAuthCallbackPopup()) {
       setIsLoading(false);
       return;
     }
 
     (async () => {
-      try {
-        const token = await AsyncStorage.getItem('access_token');
-        if (token) {
-          const me = await authApi.me();
-          setUser(me);
-        }
-      } catch {
-        await AsyncStorage.removeItem('access_token');
-      } finally {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) {
         setIsLoading(false);
+        return;
       }
+
+      // 토큰이 있으면 즉시 로그인 처리 → SubjectList로 이동
+      setUser({ id: '', email: '', created_at: '' } as User);
+      setIsLoading(false);
+
+      // 백그라운드에서 실제 사용자 정보 로드
+      authApi.me()
+        .then(me => setUser(me))
+        .catch(async (e) => {
+          // 401 = 토큰 만료/무효 → 로그아웃 처리
+          if (e?.response?.status === 401) {
+            await AsyncStorage.removeItem('access_token');
+            setUser(null);
+          }
+          // 그 외 네트워크 오류는 무시 (로그인 상태 유지)
+        });
     })();
   }, []);
 
@@ -71,6 +79,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     setUser(null);
+  }, []);
+
+  // 401 발생 시 인터셉터가 호출할 수 있도록 등록
+  useEffect(() => {
+    registerForceLogout(() => {
+      authApi.logout().catch(() => {});
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.reload();
+        return;
+      }
+      setUser(null);
+    });
   }, []);
 
   return (

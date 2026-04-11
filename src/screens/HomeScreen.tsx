@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusCard } from '../components/StatusCard';
 import { CustomButton } from '../components/CustomButton';
 import { colors } from '../theme/colors';
@@ -29,6 +30,7 @@ export const HomeScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [examModalVisible, setExamModalVisible] = useState(false);
+  const [gender, setGender] = useState<'boy' | 'girl'>('girl');
 
   const fetchProgress = useCallback(async () => {
     if (!subjectId) {
@@ -49,7 +51,13 @@ export const HomeScreen: React.FC = () => {
 
   useFocusEffect(useCallback(() => {
     fetchProgress();
-  }, [fetchProgress]));
+    // 과목별 성별 로드
+    if (subjectId) {
+      AsyncStorage.getItem(`gender_${subjectId}`).then(g => {
+        if (g === 'boy' || g === 'girl') setGender(g);
+      });
+    }
+  }, [fetchProgress, subjectId]));
 
   // ── 파생값 ─────────────────────────────────────────────────────────
   const subjectName = progress?.subject.name ?? '';
@@ -205,7 +213,11 @@ export const HomeScreen: React.FC = () => {
           <View style={styles.stageContainer}>
             <Animated.View style={[styles.characterFrame, { transform: charTransform, opacity: entChar }]}>
               <Image
-                source={require('../../assets/images/girl_character.png')}
+                source={
+                  gender === 'boy'
+                    ? require('../../assets/images/boy_character.png')
+                    : require('../../assets/images/girl_character.png')
+                }
                 style={styles.characterImg}
                 resizeMode="cover"
               />
