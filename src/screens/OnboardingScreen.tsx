@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { subjectsApi } from '../api/subjects';
 import { personasApi } from '../api/personas';
 
@@ -184,6 +185,9 @@ export const OnboardingScreen: React.FC = () => {
 
       // 2. 페르소나 생성
       await personasApi.create(subjectId, studentName.trim(), personality || 'curious');
+
+      // 3. 성별 저장 (과목별로 AsyncStorage에 보관)
+      await AsyncStorage.setItem(`gender_${subjectId}`, gender);
 
       setTimeout(() => {
         navigation.navigate('CurriculumSetup', {

@@ -26,28 +26,21 @@ export const SubjectListScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchSubjects = useCallback(async (isInitialLoad = false) => {
+  const fetchSubjects = useCallback(async () => {
     try {
       const data = await subjectsApi.list();
-      setSubjects(data);
-      // 첫 로그인 후 과목이 없으면 바로 온보딩으로 이동
-      if (isInitialLoad && data.length === 0) {
-        navigation.navigate('Onboarding', {});
-      }
+      setSubjects(Array.isArray(data) ? data : []);
     } catch {
       Alert.alert('오류', '과목 목록을 불러오지 못했어요.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [navigation]);
+  }, []);
 
-  const isFirstLoad = React.useRef(true);
   useFocusEffect(useCallback(() => {
     setLoading(true);
-    const initialLoad = isFirstLoad.current;
-    isFirstLoad.current = false;
-    fetchSubjects(initialLoad);
+    fetchSubjects();
   }, [fetchSubjects]));
 
   const handleDelete = (subject: Subject) => {
