@@ -83,7 +83,7 @@ export const StageEditScreen: React.FC = () => {
               await stagesApi.delete(subjectId, stage.id);
               setStages(prev => prev.filter((_, i) => i !== idx));
             } catch (e: any) {
-              const msg = e?.response?.data?.detail || e?.message || '삭제에 실패했어요.';
+              const msg = e?.response?.data?.error?.message || e?.message || '삭제에 실패했어요.';
               Alert.alert('오류', typeof msg === 'string' ? msg : '삭제에 실패했어요.');
             } finally {
               setSaving(false);
