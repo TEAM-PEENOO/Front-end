@@ -30,7 +30,7 @@ export const LoginScreen: React.FC = () => {
   const { loginWithToken } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  // 창 크기 변화에 반응하는 훅 (web에서 창을 늘려도 올바르게 대응)
+  // 창 크기 변화에 반응하는 훅
   const { width: SW } = useWindowDimensions();
 
   // ── 애니메이션 값 ────────────────────────────────────────────
@@ -42,8 +42,13 @@ export const LoginScreen: React.FC = () => {
   const descAnim    = useRef(new Animated.Value(0)).current;
   const btnAnim     = useRef(new Animated.Value(0)).current;
   const btnBounce   = useRef(new Animated.Value(0)).current;
+  // 반투명 원 fade-in
+  const glowAnim    = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // 0. 반투명 원 먼저 fade-in
+    Animated.timing(glowAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+
     // 1. 장식 아이콘 fade-in (stagger)
     DECORATIONS.forEach((d, i) => {
       Animated.sequence([
@@ -75,7 +80,7 @@ export const LoginScreen: React.FC = () => {
           Animated.sequence([
             Animated.delay(i * 100),
             Animated.timing(waveAnims[i], { toValue: -10, duration: 500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(waveAnims[i], { toValue: 0,  duration: 500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+            Animated.timing(waveAnims[i], { toValue: 0,   duration: 500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
           ])
         ).start();
       });
@@ -160,11 +165,11 @@ export const LoginScreen: React.FC = () => {
         style={styles.bgImage}
         resizeMode="cover"
       >
-        {/* 중앙 정렬 래퍼 — 창이 넓어져도 콘텐츠가 가운데에 유지됨 */}
+        {/* 창이 넓어져도 콘텐츠를 화면 중앙에 고정하는 래퍼 */}
         <View style={styles.centerWrapper}>
           <View style={styles.container}>
 
-            {/* 배경 장식 아이콘들 — SW를 렌더 시점에 곱해서 창 크기 변화 반영 */}
+            {/* 배경 장식 아이콘들 */}
             {DECORATIONS.map((d, i) => (
               <Animated.View
                 key={i}
@@ -187,48 +192,56 @@ export const LoginScreen: React.FC = () => {
 
             {/* 메인 콘텐츠 */}
             <View style={styles.centerArea}>
-              {/* 로고 아이콘 */}
-              <Animated.View style={{ transform: [{ scale: logoScale }], marginBottom: 12 }}>
-                <View style={styles.logoCircle}>
-                  <FontAwesome5 name="seedling" size={52} color="#FFF" solid />
+
+              {/* ── 반투명 흰색 원 ── */}
+              <Animated.View style={[styles.glowCircle, { opacity: glowAnim }]}>
+
+                {/* 로고 아이콘 */}
+                <Animated.View style={{ transform: [{ scale: logoScale }], marginBottom: 12 }}>
+                  <View style={styles.logoCircle}>
+                    <FontAwesome5 name="seedling" size={52} color="#FFF" solid />
+                  </View>
+                </Animated.View>
+
+                {/* 티-츄! 글자별 색상 + 애니메이션 */}
+                <View style={styles.titleRow}>
+                  {TITLE_CHARS.map((char, i) => (
+                    <Animated.Text
+                      key={i}
+                      style={[
+                        styles.titleChar,
+                        { color: TITLE_COLORS[i] },
+                        {
+                          transform: [
+                            { translateY: charAnims[i].interpolate({ inputRange: [0, 1], outputRange: [-80, 0] }) },
+                            { scale: charAnims[i].interpolate({ inputRange: [0, 0.7, 1], outputRange: [0.3, 1.15, 1] }) },
+                            { translateY: waveAnims[i] },
+                          ],
+                          opacity: charAnims[i],
+                        },
+                      ]}
+                    >
+                      {char}
+                    </Animated.Text>
+                  ))}
                 </View>
+
+                {/* 서브타이틀 */}
+                <Animated.Text style={[styles.subtitle, {
+                  opacity: subAnim,
+                  transform: [{ translateY: subAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+                }]}>
+                  Teach-U!
+                </Animated.Text>
+
+                {/* 설명 */}
+                <Animated.Text style={[styles.desc, { opacity: descAnim }]}>
+                  내가 선생님이 되어{'\n'}AI 제자를 직접 키우는 학습 앱
+                </Animated.Text>
+
               </Animated.View>
+              {/* ── 반투명 원 끝 ── */}
 
-              {/* 티-츄! 글자별 색상 + 애니메이션 */}
-              <View style={styles.titleRow}>
-                {TITLE_CHARS.map((char, i) => (
-                  <Animated.Text
-                    key={i}
-                    style={[
-                      styles.titleChar,
-                      { color: TITLE_COLORS[i] },
-                      {
-                        transform: [
-                          { translateY: charAnims[i].interpolate({ inputRange: [0, 1], outputRange: [-80, 0] }) },
-                          { scale: charAnims[i].interpolate({ inputRange: [0, 0.7, 1], outputRange: [0.3, 1.15, 1] }) },
-                          { translateY: waveAnims[i] },
-                        ],
-                        opacity: charAnims[i],
-                      },
-                    ]}
-                  >
-                    {char}
-                  </Animated.Text>
-                ))}
-              </View>
-
-              {/* 서브타이틀 */}
-              <Animated.Text style={[styles.subtitle, {
-                opacity: subAnim,
-                transform: [{ translateY: subAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
-              }]}>
-                Teach-U!
-              </Animated.Text>
-
-              {/* 설명 */}
-              <Animated.Text style={[styles.desc, { opacity: descAnim }]}>
-                내가 선생님이 되어{'\n'}AI 제자를 직접 키우는 학습 앱
-              </Animated.Text>
             </View>
 
             {/* 하단 버튼 */}
@@ -281,9 +294,8 @@ const styles = StyleSheet.create({
   },
   bgImage: {
     flex: 1,
-    // width/height 제거 — flex: 1 + resizeMode="cover" 조합으로 항상 꽉 채움
   },
-  // 창이 넓어져도 콘텐츠를 화면 중앙에 고정하는 래퍼
+  // 창이 넓어져도 중앙 고정
   centerWrapper: {
     flex: 1,
     alignItems: 'center',
@@ -291,23 +303,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
-    maxWidth: 480,       // 너무 넓게 퍼지지 않도록 최대 너비 제한
+    maxWidth: 480,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  // 배경 장식
   decoIcon: {
     position: 'absolute',
     zIndex: 0,
   },
-  // 중앙 영역
   centerArea: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1,
     paddingTop: 40,
+    width: '100%',
   },
+
+  // ── 반투명 흰색 원 ──────────────────────────────────────────
+  glowCircle: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    borderRadius: 999,          // 내용물에 맞게 동그랗게
+    paddingVertical: 40,
+    paddingHorizontal: 44,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  // ────────────────────────────────────────────────────────────
+
   logoCircle: {
     width: 110,
     height: 110,
@@ -323,7 +353,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
   },
-  // 제목 글자
   titleRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -352,7 +381,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 26,
   },
-  // 하단
   bottomArea: {
     width: '100%',
     alignItems: 'center',
