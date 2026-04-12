@@ -24,7 +24,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/teachu_icon_outline_final.png",
       "bundler": "metro",
       "output": "single"
     },

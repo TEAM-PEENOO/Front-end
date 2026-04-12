@@ -67,9 +67,17 @@ export const HomeScreen: React.FC = () => {
   const memoryRetention = Math.round(progress?.overall_retention ?? 0);
   const examUnlocked = currentStage?.exam_unlocked ?? false;
   const untaughtCount = currentStage?.untaught_count ?? 0;
-  const progressText = currentStage
-    ? `${currentStage.items.filter(i => i.taught).length}/${currentStage.items.length} 완료`
-    : '0/0 완료';
+  const taughtCount = currentStage?.items.filter((i: any) => i.taught).length ?? 0;
+  const totalCount = currentStage?.items.length ?? 0;
+  const progressText = currentStage ? `${taughtCount}/${totalCount} 완료` : '0/0 완료';
+
+  // 기억률에 따라 말풍선 텍스트 변경
+  const getSpeechText = () => {
+    if (memoryRetention >= 75) return `"${subjectName} 완벽하게 배웠어요! 🌟"`;
+    if (memoryRetention >= 40) return `"선생님! 오늘은 어떤 걸 배울까요? 📖"`;
+    if (memoryRetention > 0)   return `"선생님... 배운 게 가물가물해요 😢"`;
+    return `"안녕하세요 선생님! 잘 부탁드려요 🙌"`;
+  };
 
   // ── 애니메이션 ────────────────────────────────────────────────────
   const entChar = useRef(new Animated.Value(0)).current;
@@ -180,6 +188,7 @@ export const HomeScreen: React.FC = () => {
       <ImageBackground
         source={require('../../assets/images/classroom_bg.png')}
         style={styles.bgImage}
+        resizeMode="cover" // ✨ 수정됨: 배경 찌그러짐 방지
         imageStyle={{ opacity: 0.85 }}
       >
         {/* 과목 선택 버튼 (좌상단) */}
@@ -192,7 +201,11 @@ export const HomeScreen: React.FC = () => {
           <Text style={styles.subjectSelectText}>과목 선택</Text>
         </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          contentContainerStyle={[styles.container, { flexGrow: 1 }]} // ✨ 수정됨: ScrollView 콘텐츠 늘어짐 방지
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
 
           {/* 헤더 */}
           <View style={styles.headerWrapper}>
@@ -234,6 +247,7 @@ export const HomeScreen: React.FC = () => {
               <FontAwesome5 name="seedling" size={20} color="#8BC34A" />
             </Animated.View>
 
+            {/* 말풍선 */}
             <Animated.View style={[styles.characterSpeechBubble, {
               transform: [
                 { scale: entBubble.interpolate({ inputRange: [0, 0.8, 1], outputRange: [0, 1.1, 1] }) },
@@ -241,7 +255,7 @@ export const HomeScreen: React.FC = () => {
               ],
               opacity: entBubble,
             }]}>
-              <Text style={styles.speechText}>"선생님! 오늘은 어떤 걸 배울까요?"</Text>
+              <Text style={styles.speechText}>{getSpeechText()}</Text>
             </Animated.View>
           </View>
 
@@ -299,10 +313,15 @@ export const HomeScreen: React.FC = () => {
                     color={examUnlocked ? '#FFF' : '#AAA'}
                     style={{ marginRight: 10 }}
                   />
-                  <View>
+                  <View style={{ flex: 1 }}>
                     <Text style={[styles.examBtnText, !examUnlocked && { color: '#AAA' }]}>단계 시험 요청</Text>
                     {!examUnlocked && (
-                      <Text style={styles.examBtnSub}>{untaughtCount}개 항목 미학습</Text>
+                      <>
+                        <View style={styles.examMiniBarBg}>
+                          <View style={[styles.examMiniBarFill, { width: `${totalCount > 0 ? (taughtCount / totalCount) * 100 : 0}%` }]} />
+                        </View>
+                        <Text style={styles.examBtnSub}>{taughtCount}/{totalCount} 학습 완료 ({untaughtCount}개 남음)</Text>
+                      </>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -349,8 +368,17 @@ export const HomeScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000' },
-  bgImage: { flex: 1, width: '100%', height: '100%' },
-  container: { padding: 24, paddingBottom: 60 },
+  bgImage: { flex: 1 }, // ✨ 수정됨: width 100%, height 100% 제거 (flex: 1로 충분함)
+  
+  // ✨ 수정됨: 가로 모드나 태블릿에서 너무 늘어지지 않게 방어 코드 추가
+  container: { 
+    padding: 24, 
+    paddingBottom: 60,
+    maxWidth: 600, 
+    alignSelf: 'center', 
+    width: '100%',
+  },
+
   headerWrapper: { alignItems: 'center', marginBottom: 24, zIndex: 20 },
   ropeLeft: { position: 'absolute', top: -24, left: '20%', width: 6, height: 40, backgroundColor: '#8C7A5E', zIndex: -1 },
   ropeRight: { position: 'absolute', top: -24, right: '20%', width: 6, height: 40, backgroundColor: '#8C7A5E', zIndex: -1 },
@@ -371,11 +399,26 @@ const styles = StyleSheet.create({
   characterImg: { width: '100%', height: '100%' },
   sparkle1: { position: 'absolute', top: 40, left: 40, zIndex: 10 },
   sparkle2: { position: 'absolute', top: 60, right: 30, zIndex: 10 },
+  
+  // ✨ 수정됨: 말풍선 우측 배치 및 잘림 방지
   characterSpeechBubble: {
-    position: 'absolute', top: -30, right: -10, backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, borderBottomLeftRadius: 0,
-    borderWidth: 3, borderColor: '#E5D6C5', zIndex: 15,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 8,
+    position: 'absolute', 
+    top: 10,               
+    left: '55%',           
+    maxWidth: '45%',       
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16, 
+    paddingVertical: 10, 
+    borderRadius: 20, 
+    borderBottomLeftRadius: 0, 
+    borderWidth: 3, 
+    borderColor: '#E5D6C5', 
+    zIndex: 15,
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 6 }, 
+    shadowOpacity: 0.15, 
+    shadowRadius: 6, 
+    elevation: 8,
   },
   speechText: { fontFamily: 'Jua_400Regular', fontSize: 18, color: colors.textDark },
   statusCard: {
@@ -403,7 +446,9 @@ const styles = StyleSheet.create({
   },
   examBtnLocked: { backgroundColor: '#F0F0F0', borderWidth: 2, borderColor: '#DDD' },
   examBtnText: { fontFamily: 'Jua_400Regular', fontSize: 20, color: '#FFF' },
-  examBtnSub: { fontFamily: 'Jua_400Regular', fontSize: 13, color: '#AAA', textAlign: 'center' },
+  examBtnSub: { fontFamily: 'Jua_400Regular', fontSize: 12, color: '#AAA', marginTop: 2 },
+  examMiniBarBg: { height: 5, backgroundColor: '#E0E0E0', borderRadius: 3, marginTop: 5, overflow: 'hidden' },
+  examMiniBarFill: { height: '100%', backgroundColor: '#6BAA75', borderRadius: 3 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalContent: {
     backgroundColor: '#FFFDF9', borderRadius: 24, padding: 24, width: '100%',
@@ -435,11 +480,13 @@ const styles = StyleSheet.create({
     left: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: '#6BAA75',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     zIndex: 100,
+    borderWidth: 2,
+    borderColor: '#4a8a55',
   },
   subjectSelectText: { fontFamily: 'Jua_400Regular', fontSize: 14, color: '#FFF' },
 });

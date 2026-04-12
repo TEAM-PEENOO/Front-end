@@ -27,9 +27,9 @@ export const StatusCard: React.FC<StatusCardProps> = ({
   };
 
   const getMemoryLabel = () => {
-    if (memoryRetention > 75) return '🟢 선명함';
-    if (memoryRetention > 40) return '🟡 흐릿해지는 중';
-    return '🔴 복습 필요';
+    if (memoryRetention > 75) return '선명함';
+    if (memoryRetention > 40) return '흐릿해지는 중';
+    return '복습 필요';
   };
 
   return (
@@ -46,7 +46,7 @@ export const StatusCard: React.FC<StatusCardProps> = ({
       <View style={styles.retentionContainer}>
         <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6}}>
           <Text style={styles.retentionLabel}>기억 유지율</Text>
-          <Text style={styles.retentionStatus}>{getMemoryLabel()}</Text>
+          <Text style={[styles.retentionStatus, { color: getMemoryColor() }]}>{memoryRetention}% {getMemoryLabel()}</Text>
         </View>
         <View style={styles.progressBarBackground}>
           <View
@@ -55,6 +55,7 @@ export const StatusCard: React.FC<StatusCardProps> = ({
               { width: `${Math.max(0, Math.min(100, memoryRetention))}%`, backgroundColor: getMemoryColor() },
             ]}
           />
+          <Text style={[styles.leafIcon, { left: `${Math.max(0, Math.min(94, memoryRetention - 3))}%` }]}>🍃</Text>
         </View>
       </View>
     </View>
@@ -124,10 +125,16 @@ const styles = StyleSheet.create({
     height: 12,
     backgroundColor: '#EBEBEB',
     borderRadius: 6,
-    overflow: 'hidden',
+    overflow: 'visible',
+    position: 'relative',
   },
   progressBarFill: {
     height: '100%',
     borderRadius: 6,
+  },
+  leafIcon: {
+    position: 'absolute',
+    top: -4,
+    fontSize: 18,
   },
 });

@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView,
   TouchableOpacity, ActivityIndicator, Alert, Animated, Easing, Dimensions, Platform,
+  ImageBackground,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -163,6 +164,11 @@ export const LoginScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <ImageBackground
+        source={require('../../assets/images/login_bg.png')}
+        style={styles.bgImage}
+        resizeMode="cover"
+      >
       <View style={styles.container}>
 
         {/* 배경 장식 아이콘들 */}
@@ -228,7 +234,7 @@ export const LoginScreen: React.FC = () => {
 
           {/* 서브타이틀 */}
           <Animated.Text style={[styles.subtitle, { opacity: subAnim, transform: [{ translateY: subAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
-            ✨ Teach You! ✨
+            Teach-U! 
           </Animated.Text>
 
           {/* 설명 */}
@@ -275,6 +281,7 @@ export const LoginScreen: React.FC = () => {
         </Animated.View>
 
       </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 };
@@ -283,6 +290,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFDE7',
+  },
+  bgImage: {
+    flex: 1,
   },
   container: {
     flex: 1,
@@ -300,6 +310,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1,
+    paddingTop: 40,
   },
   logoCircle: {
     width: 110,
