@@ -2,8 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView,
-  TouchableOpacity, ActivityIndicator, Alert, Animated, Easing, Dimensions, Platform,
-  ImageBackground,
+  TouchableOpacity, ActivityIndicator, Alert, Animated, Easing, Platform,
+  ImageBackground, useWindowDimensions,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -11,13 +11,11 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../constants';
 
-const { width: SW } = Dimensions.get('window');
-
 // 티-츄! 각 글자별 색상 (동물의 숲 톤)
 const TITLE_CHARS = ['티', '-', '츄', '!'];
 const TITLE_COLORS = ['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF'];
 
-// 장식 요소
+// 장식 요소 (비율로만 정의 — SW는 렌더 시점에 곱함)
 const DECORATIONS = [
   { icon: 'leaf',      color: '#6BCB77', top: 0.08, left: 0.05,  size: 22, delay: 400 },
   { icon: 'star',      color: '#FFD93D', top: 0.12, right: 0.06, size: 18, delay: 600 },
@@ -32,20 +30,18 @@ export const LoginScreen: React.FC = () => {
   const { loginWithToken } = useAuth();
   const [loading, setLoading] = useState(false);
 
+  // 창 크기 변화에 반응하는 훅 (web에서 창을 늘려도 올바르게 대응)
+  const { width: SW } = useWindowDimensions();
+
   // ── 애니메이션 값 ────────────────────────────────────────────
-  // 각 글자 bounce-in
-  const charAnims = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
-  // 각 글자 wave (idle)
-  const waveAnims = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
-  // 장식 아이콘 fade + float
-  const decoAnims = useRef(DECORATIONS.map(() => new Animated.Value(0))).current;
-  // 전체 로고 + 서브타이틀 fade
-  const logoAnim  = useRef(new Animated.Value(0)).current;
-  const subAnim   = useRef(new Animated.Value(0)).current;
-  const descAnim  = useRef(new Animated.Value(0)).current;
-  const btnAnim   = useRef(new Animated.Value(0)).current;
-  // 버튼 continuous bounce
-  const btnBounce = useRef(new Animated.Value(0)).current;
+  const charAnims   = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
+  const waveAnims   = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
+  const decoAnims   = useRef(DECORATIONS.map(() => new Animated.Value(0))).current;
+  const logoAnim    = useRef(new Animated.Value(0)).current;
+  const subAnim     = useRef(new Animated.Value(0)).current;
+  const descAnim    = useRef(new Animated.Value(0)).current;
+  const btnAnim     = useRef(new Animated.Value(0)).current;
+  const btnBounce   = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // 1. 장식 아이콘 fade-in (stagger)
@@ -109,8 +105,6 @@ export const LoginScreen: React.FC = () => {
       const authUrl = `${API_BASE_URL}/auth/google/login?redirect_uri=${encodeURIComponent(redirectUri)}`;
 
       if (Platform.OS === 'web') {
-        // COOP 헤더로 인해 window.opener / window.closed 접근이 막히는 문제 우회:
-        // BroadcastChannel로 팝업 → 부모 창 간 동일 origin 통신 사용
         await new Promise<void>((resolve, reject) => {
           const channel = new BroadcastChannel('oauth_callback');
           let settled = false;
@@ -129,14 +123,11 @@ export const LoginScreen: React.FC = () => {
               try { await loginWithToken(token); resolve(); }
               catch (e) { reject(e); }
             } else {
-              resolve(); // 토큰 없음 → 취소로 처리
+              resolve();
             }
           };
 
-          // 팝업을 직접 열어 window.closed 폴링 의존성 제거
           window.open(authUrl, 'google_oauth', 'width=500,height=650,left=300,top=100');
-
-          // 10분 타임아웃: 사용자가 팝업을 닫거나 미완료 시 로딩 해제
           const timer = setTimeout(() => { settle(); resolve(); }, 10 * 60 * 1000);
         });
       } else {
@@ -169,118 +160,115 @@ export const LoginScreen: React.FC = () => {
         style={styles.bgImage}
         resizeMode="cover"
       >
-      <View style={styles.container}>
+        {/* 중앙 정렬 래퍼 — 창이 넓어져도 콘텐츠가 가운데에 유지됨 */}
+        <View style={styles.centerWrapper}>
+          <View style={styles.container}>
 
-        {/* 배경 장식 아이콘들 */}
-        {DECORATIONS.map((d, i) => (
-          <Animated.View
-            key={i}
-            style={[
-              styles.decoIcon,
-              {
-                top:   d.top   ? SW * d.top   : undefined,
-                left:  (d as any).left  !== undefined ? SW * (d as any).left  : undefined,
-                right: (d as any).right !== undefined ? SW * (d as any).right : undefined,
-                opacity: decoAnims[i],
-                transform: [{
-                  translateY: decoAnims[i].interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }),
-                }],
-              },
-            ]}
-          >
-            <FontAwesome5 name={d.icon} size={d.size} color={d.color} solid />
-          </Animated.View>
-        ))}
-
-        {/* 메인 콘텐츠 */}
-        <View style={styles.centerArea}>
-          {/* 로고 아이콘 */}
-          <Animated.View style={{ transform: [{ scale: logoScale }], marginBottom: 12 }}>
-            <View style={styles.logoCircle}>
-              <FontAwesome5 name="seedling" size={52} color="#FFF" solid />
-            </View>
-          </Animated.View>
-
-          {/* 티-츄! 글자별 색상 + 애니메이션 */}
-          <View style={styles.titleRow}>
-            {TITLE_CHARS.map((char, i) => (
-              <Animated.Text
+            {/* 배경 장식 아이콘들 — SW를 렌더 시점에 곱해서 창 크기 변화 반영 */}
+            {DECORATIONS.map((d, i) => (
+              <Animated.View
                 key={i}
                 style={[
-                  styles.titleChar,
-                  { color: TITLE_COLORS[i] },
+                  styles.decoIcon,
                   {
-                    transform: [
-                      {
-                        translateY: charAnims[i].interpolate({
-                          inputRange: [0, 1], outputRange: [-80, 0],
-                        }),
-                      },
-                      {
-                        scale: charAnims[i].interpolate({
-                          inputRange: [0, 0.7, 1], outputRange: [0.3, 1.15, 1],
-                        }),
-                      },
-                      { translateY: waveAnims[i] },
-                    ],
-                    opacity: charAnims[i],
+                    top:   SW * d.top,
+                    left:  (d as any).left  !== undefined ? SW * (d as any).left  : undefined,
+                    right: (d as any).right !== undefined ? SW * (d as any).right : undefined,
+                    opacity: decoAnims[i],
+                    transform: [{
+                      translateY: decoAnims[i].interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }),
+                    }],
                   },
                 ]}
               >
-                {char}
-              </Animated.Text>
+                <FontAwesome5 name={d.icon} size={d.size} color={d.color} solid />
+              </Animated.View>
             ))}
-          </View>
 
-          {/* 서브타이틀 */}
-          <Animated.Text style={[styles.subtitle, { opacity: subAnim, transform: [{ translateY: subAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
-            Teach-U! 
-          </Animated.Text>
+            {/* 메인 콘텐츠 */}
+            <View style={styles.centerArea}>
+              {/* 로고 아이콘 */}
+              <Animated.View style={{ transform: [{ scale: logoScale }], marginBottom: 12 }}>
+                <View style={styles.logoCircle}>
+                  <FontAwesome5 name="seedling" size={52} color="#FFF" solid />
+                </View>
+              </Animated.View>
 
-          {/* 설명 */}
-          <Animated.Text style={[styles.desc, { opacity: descAnim }]}>
-            내가 선생님이 되어{'\n'}AI 제자를 직접 키우는 학습 앱
-          </Animated.Text>
-        </View>
+              {/* 티-츄! 글자별 색상 + 애니메이션 */}
+              <View style={styles.titleRow}>
+                {TITLE_CHARS.map((char, i) => (
+                  <Animated.Text
+                    key={i}
+                    style={[
+                      styles.titleChar,
+                      { color: TITLE_COLORS[i] },
+                      {
+                        transform: [
+                          { translateY: charAnims[i].interpolate({ inputRange: [0, 1], outputRange: [-80, 0] }) },
+                          { scale: charAnims[i].interpolate({ inputRange: [0, 0.7, 1], outputRange: [0.3, 1.15, 1] }) },
+                          { translateY: waveAnims[i] },
+                        ],
+                        opacity: charAnims[i],
+                      },
+                    ]}
+                  >
+                    {char}
+                  </Animated.Text>
+                ))}
+              </View>
 
-        {/* 하단 버튼 */}
-        <Animated.View
-          style={[
-            styles.bottomArea,
-            {
-              opacity: btnAnim,
-              transform: [
-                { translateY: btnAnim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) },
-                { translateY: btnBounce },
-              ],
-            },
-          ]}
-        >
+              {/* 서브타이틀 */}
+              <Animated.Text style={[styles.subtitle, {
+                opacity: subAnim,
+                transform: [{ translateY: subAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+              }]}>
+                Teach-U!
+              </Animated.Text>
 
-          <View style={styles.buttonCard}>
-            <TouchableOpacity
-              style={[styles.googleBtn, loading && { opacity: 0.7 }]}
-              onPress={handleGoogleLogin}
-              disabled={loading}
-              activeOpacity={0.85}
+              {/* 설명 */}
+              <Animated.Text style={[styles.desc, { opacity: descAnim }]}>
+                내가 선생님이 되어{'\n'}AI 제자를 직접 키우는 학습 앱
+              </Animated.Text>
+            </View>
+
+            {/* 하단 버튼 */}
+            <Animated.View
+              style={[
+                styles.bottomArea,
+                {
+                  opacity: btnAnim,
+                  transform: [
+                    { translateY: btnAnim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) },
+                    { translateY: btnBounce },
+                  ],
+                },
+              ]}
             >
-              {loading ? (
-                <ActivityIndicator color="#555" />
-              ) : (
-                <>
-                  <FontAwesome5 name="google" size={20} color="#555" style={{ marginRight: 12 }} />
-                  <Text style={styles.googleBtnText}>Google로 시작하기</Text>
-                </>
-              )}
-            </TouchableOpacity>
+              <View style={styles.buttonCard}>
+                <TouchableOpacity
+                  style={[styles.googleBtn, loading && { opacity: 0.7 }]}
+                  onPress={handleGoogleLogin}
+                  disabled={loading}
+                  activeOpacity={0.85}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#555" />
+                  ) : (
+                    <>
+                      <FontAwesome5 name="google" size={20} color="#555" style={{ marginRight: 12 }} />
+                      <Text style={styles.googleBtnText}>Google로 시작하기</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
 
-            <Text style={styles.terms}>
-              로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의합니다.
-            </Text>
+                <Text style={styles.terms}>
+                  로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의합니다.
+                </Text>
+              </View>
+            </Animated.View>
+
           </View>
-        </Animated.View>
-
-      </View>
+        </View>
       </ImageBackground>
     </SafeAreaView>
   );
@@ -293,9 +281,17 @@ const styles = StyleSheet.create({
   },
   bgImage: {
     flex: 1,
+    // width/height 제거 — flex: 1 + resizeMode="cover" 조합으로 항상 꽉 채움
+  },
+  // 창이 넓어져도 콘텐츠를 화면 중앙에 고정하는 래퍼
+  centerWrapper: {
+    flex: 1,
+    alignItems: 'center',
   },
   container: {
     flex: 1,
+    width: '100%',
+    maxWidth: 480,       // 너무 넓게 퍼지지 않도록 최대 너비 제한
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -361,13 +357,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     zIndex: 1,
-  },
-  grassRow: {
-    flexDirection: 'row',
-    marginBottom: -4,
-  },
-  grass: {
-    fontSize: 22,
   },
   buttonCard: {
     width: '100%',
