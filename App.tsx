@@ -92,7 +92,15 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function AppNavigator() {
   const { user, isLoading } = useAuth();
 
-  if (isLoading) {
+  // 웹: localStorage에 access_token이 있으면 로딩 없이 즉시 과목선택 페이지로
+  const hasStoredToken =
+    Platform.OS === 'web' && typeof window !== 'undefined'
+      ? !!localStorage.getItem('access_token')
+      : false;
+
+  const isAuthenticated = !!user || hasStoredToken;
+
+  if (isLoading && !hasStoredToken) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAF3E0' }}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -102,11 +110,11 @@ function AppNavigator() {
 
   return (
     <Stack.Navigator
-      key={user ? 'authenticated' : 'unauthenticated'}
+      key={isAuthenticated ? 'authenticated' : 'unauthenticated'}
       screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
-      initialRouteName={user ? 'SubjectList' : 'Login'}
+      initialRouteName={isAuthenticated ? 'SubjectList' : 'Login'}
     >
-      {user ? (
+      {isAuthenticated ? (
         // ── 인증된 사용자 ────────────────────────────────
         <>
           <Stack.Screen name="SubjectList" component={SubjectListScreen} />
