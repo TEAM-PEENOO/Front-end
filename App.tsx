@@ -44,6 +44,8 @@ import { ExamResultScreen } from './src/screens/ExamResultScreen';
 import { WeaknessNoteScreen } from './src/screens/WeaknessNoteScreen';
 import { GrowthTimelineScreen } from './src/screens/GrowthTimelineScreen';
 import { SyllabusScreen } from './src/screens/SyllabusScreen';
+import { CurriculumEditScreen } from './src/screens/CurriculumEditScreen';
+import { StageEditScreen } from './src/screens/StageEditScreen';
 import { PracticeScreen } from './src/screens/PracticeScreen';
 
 import { colors } from './src/theme/colors';
@@ -83,6 +85,8 @@ export type RootStackParamList = {
   Weakness: { subjectId: string; studentName: string };
   GrowthTimeline: { subjectId: string; studentName: string };
   Syllabus: { subjectId: string; studentName: string; subjectName: string };
+  CurriculumEdit: { subjectId: string; subjectName: string };
+  StageEdit: { subjectId: string; subjectName: string; curriculumItems?: any[] };
   Practice: { subjectId: string; studentName: string; concept: string; tagId: string };
 };
 
@@ -128,6 +132,8 @@ function AppNavigator() {
           <Stack.Screen name="Weakness" component={WeaknessNoteScreen} />
           <Stack.Screen name="GrowthTimeline" component={GrowthTimelineScreen} />
           <Stack.Screen name="Syllabus" component={SyllabusScreen} />
+          <Stack.Screen name="CurriculumEdit" component={CurriculumEditScreen} />
+          <Stack.Screen name="StageEdit" component={StageEditScreen} />
           <Stack.Screen name="Practice" component={PracticeScreen} />
         </>
       ) : (
