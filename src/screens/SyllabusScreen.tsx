@@ -56,6 +56,13 @@ export const SyllabusScreen: React.FC = () => {
           </TouchableOpacity>
           <FontAwesome5 name="map" size={28} color="#3E2723" style={{ marginRight: 12 }} />
           <Text style={styles.headerTitle}>우리 반 진도표</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('CurriculumEdit', { subjectId, subjectName })}
+            style={styles.editButton}
+          >
+            <FontAwesome5 name="pen" size={14} color={colors.primary} />
+            <Text style={styles.editButtonText}>편집</Text>
+          </TouchableOpacity>
         </View>
         <Text style={styles.headerSubtitle}>[{subjectName}] 커리큘럼 로드맵</Text>
       </View>
@@ -162,7 +169,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7', paddingTop: 56, paddingBottom: 18,
     paddingHorizontal: 24, borderBottomWidth: 3, borderColor: '#D4B886',
   },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, flex: 1 },
+  editButton: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    marginLeft: 'auto', backgroundColor: '#E8F5E9',
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
+    borderWidth: 1.5, borderColor: colors.primaryLight,
+  },
+  editButtonText: { fontFamily: 'Jua_400Regular', fontSize: 13, color: colors.primary },
   headerTitle: { fontFamily: 'Jua_400Regular', fontSize: 26, color: '#3E2723' },
   headerSubtitle: { fontFamily: 'Jua_400Regular', fontSize: 15, color: '#8C7A5E', marginLeft: 44 },
   container: { padding: 16, gap: 16, paddingBottom: 40 },
