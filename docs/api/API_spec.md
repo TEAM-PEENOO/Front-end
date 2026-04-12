@@ -7,6 +7,27 @@
 
 ---
 
+## 데모 연동 기준(현재 구현)
+
+- Google 웹 로그인:
+  - `GET /auth/google/url`
+  - `POST /auth/google/code`
+- 과목/커리큘럼/단계:
+  - `POST /subjects`
+  - `POST /subjects/{subject_id}/curriculum`
+  - `POST /subjects/{subject_id}/stages`
+- 수업 세션(백엔드 구현 기준):
+  - `POST /teaching/sessions`
+  - `POST /teaching/sessions/{session_id}/messages`
+  - `POST /teaching/sessions/{session_id}/finish`
+- 시험:
+  - `POST /subjects/{subject_id}/stages/{stage_id}/exams`
+  - `POST /exams/{exam_id}/submit`
+
+> 아래 상세 명세 일부는 기획안 기준으로 남아 있으며, 데모 연결은 위 경로를 우선 사용한다.
+
+---
+
 ## 공통 규칙
 
 ### 인증 헤더
