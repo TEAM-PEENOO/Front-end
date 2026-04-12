@@ -234,7 +234,7 @@ export const LoginScreen: React.FC = () => {
 
           {/* 서브타이틀 */}
           <Animated.Text style={[styles.subtitle, { opacity: subAnim, transform: [{ translateY: subAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
-            ✨ Teach You! ✨
+            Teach-U! 
           </Animated.Text>
 
           {/* 설명 */}
