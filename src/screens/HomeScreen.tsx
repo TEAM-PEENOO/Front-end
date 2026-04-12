@@ -188,7 +188,6 @@ export const HomeScreen: React.FC = () => {
       <ImageBackground
         source={require('../../assets/images/classroom_bg.png')}
         style={styles.bgImage}
-        resizeMode="cover" // ✨ 수정됨: 배경 찌그러짐 방지
         imageStyle={{ opacity: 0.85 }}
       >
         {/* 과목 선택 버튼 (좌상단) */}
@@ -202,7 +201,7 @@ export const HomeScreen: React.FC = () => {
         </TouchableOpacity>
 
         <ScrollView 
-          contentContainerStyle={[styles.container, { flexGrow: 1 }]} // ✨ 수정됨: ScrollView 콘텐츠 늘어짐 방지
+          contentContainerStyle={[styles.container, { flexGrow: 1 }]} 
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
@@ -277,20 +276,23 @@ export const HomeScreen: React.FC = () => {
           <Animated.View style={[styles.woodBoardContainer, { transform: boardTransform, opacity: entBoard }]}>
             <View style={styles.woodBoardInner}>
               <View style={styles.actionGrid}>
+                
                 <CustomButton
                   title="가르치기"
                   variant="primary"
-                  iconName="chalkboard-teacher"
+                  iconName="book-open" 
                   style={styles.mainActionBtn}
                   textStyle={styles.mainActionText}
                   onPress={() => navigation.navigate('Chat', { subjectId, studentName, personality, subjectName })}
                 />
+                
                 <View style={styles.secondaryActionRow}>
                   <CustomButton
                     title="진도표"
                     variant="secondary"
                     iconName="map"
                     style={styles.subActionBtn}
+                    textStyle={styles.subActionText} 
                     onPress={() => navigation.navigate('Syllabus', { subjectId, studentName, subjectName })}
                   />
                   <CustomButton
@@ -298,33 +300,39 @@ export const HomeScreen: React.FC = () => {
                     variant="secondary"
                     iconName="archive"
                     style={styles.subActionBtn}
+                    textStyle={styles.subActionText} 
                     onPress={() => navigation.navigate('Weakness', { subjectId, studentName })}
                   />
                 </View>
-                {/* 시험 버튼 — 해금 여부에 따라 스타일 변경 */}
+
+                {/* 시험 버튼 — 완벽한 중앙 정렬 (컬러 원복) */}
                 <TouchableOpacity
                   style={[styles.examBtn, !examUnlocked && styles.examBtnLocked]}
                   activeOpacity={0.85}
                   onPress={() => examUnlocked ? setExamModalVisible(true) : Alert.alert('시험 잠김', `아직 가르치지 않은 항목이 ${untaughtCount}개 남았어요.`)}
                 >
-                  <FontAwesome5
-                    name={examUnlocked ? 'award' : 'lock'}
-                    size={22}
-                    color={examUnlocked ? '#FFF' : '#AAA'}
-                    style={{ marginRight: 10 }}
-                  />
-                  <View style={{ flex: 1 }}>
+                  <View style={styles.examIconWrapper}>
+                    <FontAwesome5
+                      name={examUnlocked ? 'award' : 'lock'}
+                      size={20}
+                      color={examUnlocked ? '#FFF' : '#888'}
+                    />
+                  </View>
+
+                  <View style={{ flex: 1, alignItems: 'center' }}>
+                    {/* 🌟 텍스트 컬러 회색톤으로 원복 (#AAA) */}
                     <Text style={[styles.examBtnText, !examUnlocked && { color: '#AAA' }]}>단계 시험 요청</Text>
                     {!examUnlocked && (
-                      <>
+                      <View style={{ width: '100%', alignItems: 'center', marginTop: 4 }}>
                         <View style={styles.examMiniBarBg}>
                           <View style={[styles.examMiniBarFill, { width: `${totalCount > 0 ? (taughtCount / totalCount) * 100 : 0}%` }]} />
                         </View>
                         <Text style={styles.examBtnSub}>{taughtCount}/{totalCount} 학습 완료 ({untaughtCount}개 남음)</Text>
-                      </>
+                      </View>
                     )}
                   </View>
                 </TouchableOpacity>
+
               </View>
             </View>
           </Animated.View>
@@ -368,9 +376,8 @@ export const HomeScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000' },
-  bgImage: { flex: 1 }, // ✨ 수정됨: width 100%, height 100% 제거 (flex: 1로 충분함)
+  bgImage: { flex: 1, width: '100%', height: '100%' }, 
   
-  // ✨ 수정됨: 가로 모드나 태블릿에서 너무 늘어지지 않게 방어 코드 추가
   container: { 
     padding: 24, 
     paddingBottom: 60,
@@ -400,11 +407,10 @@ const styles = StyleSheet.create({
   sparkle1: { position: 'absolute', top: 40, left: 40, zIndex: 10 },
   sparkle2: { position: 'absolute', top: 60, right: 30, zIndex: 10 },
   
-  // ✨ 수정됨: 말풍선 우측 배치 및 잘림 방지
   characterSpeechBubble: {
     position: 'absolute', 
-    top: 10,               
-    left: '55%',           
+    top: -5,               
+    left: '65%',           
     maxWidth: '45%',       
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16, 
@@ -425,6 +431,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 8,
   },
+  
   woodBoardContainer: {
     backgroundColor: '#CDA883', borderRadius: 24, borderWidth: 4, borderColor: '#8A5A44',
     borderBottomWidth: 10, padding: 18,
@@ -435,20 +442,34 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)',
   },
   actionGrid: { gap: 16 },
-  mainActionBtn: { paddingVertical: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 3 },
+  
+  mainActionBtn: { paddingVertical: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 3 },
   mainActionText: { fontSize: 22 },
-  secondaryActionRow: { flexDirection: 'row', gap: 12 },
-  subActionBtn: { flex: 1, paddingVertical: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 3 },
+  
+  secondaryActionRow: { flexDirection: 'row', gap: 10 }, 
+  subActionBtn: { 
+    flex: 1, 
+    paddingVertical: 14, 
+    paddingHorizontal: 4, 
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 3 
+  },
+  subActionText: { fontSize: 15, fontFamily: 'Jua_400Regular' }, 
+
   examBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.accent, borderRadius: 16, paddingVertical: 18, paddingHorizontal: 24,
+    backgroundColor: colors.accent, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 24,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 4,
+    position: 'relative', 
   },
-  examBtnLocked: { backgroundColor: '#F0F0F0', borderWidth: 2, borderColor: '#DDD' },
-  examBtnText: { fontFamily: 'Jua_400Regular', fontSize: 20, color: '#FFF' },
-  examBtnSub: { fontFamily: 'Jua_400Regular', fontSize: 12, color: '#AAA', marginTop: 2 },
-  examMiniBarBg: { height: 5, backgroundColor: '#E0E0E0', borderRadius: 3, marginTop: 5, overflow: 'hidden' },
-  examMiniBarFill: { height: '100%', backgroundColor: '#6BAA75', borderRadius: 3 },
+  // 🌟 잠금 상태 버튼 컬러 및 테두리 원래 코드로 원복 (#F0F0F0)
+  examBtnLocked: { backgroundColor: '#F0F0F0', borderWidth: 2, borderColor: '#DDD' }, 
+  examIconWrapper: { position: 'absolute', left: 24 }, 
+  examBtnText: { fontFamily: 'Jua_400Regular', fontSize: 18, color: '#FFF', textAlign: 'center' },
+  examBtnSub: { fontFamily: 'Jua_400Regular', fontSize: 12, color: '#AAA', marginTop: 4, textAlign: 'center' },
+  // 🌟 게이지바 백그라운드 컬러 원래 코드로 원복 (#E0E0E0)
+  examMiniBarBg: { width: '85%', height: 6, backgroundColor: '#E0E0E0', borderRadius: 3, marginTop: 5, overflow: 'hidden' }, 
+  examMiniBarFill: { height: '100%', backgroundColor: '#8BC34A', borderRadius: 3 },
+
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalContent: {
     backgroundColor: '#FFFDF9', borderRadius: 24, padding: 24, width: '100%',
