@@ -1,10 +1,11 @@
 // src/screens/ChatScreen.tsx
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, FlatList, ActivityIndicator,
   Alert, Modal,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { Avatar } from '../components/Avatar';
@@ -24,6 +25,9 @@ export const ChatScreen: React.FC = () => {
   const route = useRoute<any>();
   const { subjectId, studentName = '', personality = 'curious', subjectName = '' } = route.params || {};
 
+  // 아바타 성별 (subjectId 기준으로 AsyncStorage에서 로드)
+  const [gender, setGender] = useState<'boy' | 'girl'>('girl');
+
   // 주제 선택 상태
   const [curriculumItems, setCurriculumItems] = useState<CurriculumItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
@@ -40,6 +44,27 @@ export const ChatScreen: React.FC = () => {
 
   const flatListRef = useRef<FlatList>(null);
   const streamingTextRef = useRef('');
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 성별 로드
+  useEffect(() => {
+    if (subjectId) {
+      AsyncStorage.getItem(`gender_${subjectId}`).then(g => {
+        if (g === 'boy' || g === 'girl') setGender(g);
+      });
+    }
+  }, [subjectId]);
+
+  // 메시지가 바뀔 때마다 부드럽게 맨 아래로 스크롤
+  useEffect(() => {
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 60);
+    return () => {
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
+  }, [messages]);
 
   // 커리큘럼 항목 로딩 (화면 진입 시)
   const loadItems = useCallback(async () => {
@@ -95,7 +120,7 @@ export const ChatScreen: React.FC = () => {
         setMessages(prev =>
           prev.map(m => m.id === aiMsgId ? { ...m, text: current } : m)
         );
-        flatListRef.current?.scrollToEnd({ animated: true });
+        // 스크롤은 useEffect에서 debounce 처리 — 여기서는 중복 호출 안함
       });
     } catch {
       setMessages(prev =>
@@ -195,7 +220,7 @@ export const ChatScreen: React.FC = () => {
           <TouchableOpacity onPress={() => { setSelectedItem(null); setMessages([]); setSessionId(null); }} style={{ marginRight: 12 }}>
             <FontAwesome5 name="arrow-left" size={22} color="#FFF" />
           </TouchableOpacity>
-          <Avatar size={40} style={styles.chatAvatar} />
+          <Avatar size={40} gender={gender} style={styles.chatAvatar} />
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={styles.chatHeaderName}>{studentName}</Text>
             <Text style={styles.chatHeaderTopic} numberOfLines={1}>{selectedItem.title}</Text>
@@ -218,10 +243,9 @@ export const ChatScreen: React.FC = () => {
           data={messages}
           keyExtractor={m => m.id}
           contentContainerStyle={styles.messageList}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           renderItem={({ item: msg }) => (
             <View style={[styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleAI]}>
-              {msg.role === 'assistant' && <Avatar size={32} style={{ marginRight: 8, alignSelf: 'flex-end' }} />}
+              {msg.role === 'assistant' && <Avatar size={32} gender={gender} style={{ marginRight: 8, alignSelf: 'flex-end' }} />}
               <View style={[styles.bubbleContent, msg.role === 'user' ? styles.bubbleContentUser : styles.bubbleContentAI]}>
                 <Text style={[styles.bubbleText, msg.role === 'user' && { color: '#FFF' }]}>
                   {msg.text}
