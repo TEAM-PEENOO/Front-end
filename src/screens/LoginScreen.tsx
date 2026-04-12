@@ -26,27 +26,28 @@ const DECORATIONS = [
   { icon: 'sun',       color: '#FFD93D', top: 0.03, left: 0.35,  size: 26, delay: 300 },
 ];
 
+// 원 크기 고정값
+const CIRCLE_SIZE = 300;
+
 export const LoginScreen: React.FC = () => {
   const { loginWithToken } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  // 창 크기 변화에 반응하는 훅
   const { width: SW } = useWindowDimensions();
 
   // ── 애니메이션 값 ────────────────────────────────────────────
-  const charAnims   = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
-  const waveAnims   = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
-  const decoAnims   = useRef(DECORATIONS.map(() => new Animated.Value(0))).current;
-  const logoAnim    = useRef(new Animated.Value(0)).current;
-  const subAnim     = useRef(new Animated.Value(0)).current;
-  const descAnim    = useRef(new Animated.Value(0)).current;
-  const btnAnim     = useRef(new Animated.Value(0)).current;
-  const btnBounce   = useRef(new Animated.Value(0)).current;
-  // 반투명 원 fade-in
-  const glowAnim    = useRef(new Animated.Value(0)).current;
+  const charAnims  = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
+  const waveAnims  = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
+  const decoAnims  = useRef(DECORATIONS.map(() => new Animated.Value(0))).current;
+  const logoAnim   = useRef(new Animated.Value(0)).current;
+  const subAnim    = useRef(new Animated.Value(0)).current;
+  const descAnim   = useRef(new Animated.Value(0)).current;
+  const btnAnim    = useRef(new Animated.Value(0)).current;
+  const btnBounce  = useRef(new Animated.Value(0)).current;
+  const glowAnim   = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // 0. 반투명 원 먼저 fade-in
+    // 0. 반투명 원 fade-in
     Animated.timing(glowAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
 
     // 1. 장식 아이콘 fade-in (stagger)
@@ -67,9 +68,7 @@ export const LoginScreen: React.FC = () => {
     const charEntrance = TITLE_CHARS.map((_, i) =>
       Animated.sequence([
         Animated.delay(500 + i * 120),
-        Animated.spring(charAnims[i], {
-          toValue: 1, friction: 3, tension: 80, useNativeDriver: true,
-        }),
+        Animated.spring(charAnims[i], { toValue: 1, friction: 3, tension: 80, useNativeDriver: true }),
       ])
     );
 
@@ -113,14 +112,12 @@ export const LoginScreen: React.FC = () => {
         await new Promise<void>((resolve, reject) => {
           const channel = new BroadcastChannel('oauth_callback');
           let settled = false;
-
           const settle = () => {
             if (settled) return;
             settled = true;
             clearTimeout(timer);
             channel.close();
           };
-
           channel.onmessage = async (event: MessageEvent) => {
             settle();
             const token: string | undefined = event.data?.access_token;
@@ -131,7 +128,6 @@ export const LoginScreen: React.FC = () => {
               resolve();
             }
           };
-
           window.open(authUrl, 'google_oauth', 'width=500,height=650,left=300,top=100');
           const timer = setTimeout(() => { settle(); resolve(); }, 10 * 60 * 1000);
         });
@@ -165,7 +161,6 @@ export const LoginScreen: React.FC = () => {
         style={styles.bgImage}
         resizeMode="cover"
       >
-        {/* 창이 넓어져도 콘텐츠를 화면 중앙에 고정하는 래퍼 */}
         <View style={styles.centerWrapper}>
           <View style={styles.container}>
 
@@ -193,13 +188,13 @@ export const LoginScreen: React.FC = () => {
             {/* 메인 콘텐츠 */}
             <View style={styles.centerArea}>
 
-              {/* ── 반투명 흰색 원 ── */}
+              {/* ── 반투명 흰색 정원 ── */}
               <Animated.View style={[styles.glowCircle, { opacity: glowAnim }]}>
 
                 {/* 로고 아이콘 */}
-                <Animated.View style={{ transform: [{ scale: logoScale }], marginBottom: 12 }}>
+                <Animated.View style={{ transform: [{ scale: logoScale }], marginBottom: 8 }}>
                   <View style={styles.logoCircle}>
-                    <FontAwesome5 name="seedling" size={52} color="#FFF" solid />
+                    <FontAwesome5 name="seedling" size={44} color="#FFF" solid />
                   </View>
                 </Animated.View>
 
@@ -226,7 +221,7 @@ export const LoginScreen: React.FC = () => {
                   ))}
                 </View>
 
-                {/* 서브타이틀 */}
+                {/* 서브타이틀 — 배경과 구분되도록 진한 갈색으로 변경 */}
                 <Animated.Text style={[styles.subtitle, {
                   opacity: subAnim,
                   transform: [{ translateY: subAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
@@ -240,7 +235,7 @@ export const LoginScreen: React.FC = () => {
                 </Animated.Text>
 
               </Animated.View>
-              {/* ── 반투명 원 끝 ── */}
+              {/* ── 정원 끝 ── */}
 
             </View>
 
@@ -273,7 +268,6 @@ export const LoginScreen: React.FC = () => {
                     </>
                   )}
                 </TouchableOpacity>
-
                 <Text style={styles.terms}>
                   로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의합니다.
                 </Text>
@@ -295,7 +289,6 @@ const styles = StyleSheet.create({
   bgImage: {
     flex: 1,
   },
-  // 창이 넓어져도 중앙 고정
   centerWrapper: {
     flex: 1,
     alignItems: 'center',
@@ -320,48 +313,49 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  // ── 반투명 흰색 원 ──────────────────────────────────────────
+  // ── 반투명 흰색 정원 ─────────────────────────────────────────
   glowCircle: {
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    borderRadius: CIRCLE_SIZE / 2,   // 완전한 정원
+    backgroundColor: 'rgba(255, 255, 255, 0.60)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
-    borderRadius: 999,          // 내용물에 맞게 동그랗게
-    paddingVertical: 40,
-    paddingHorizontal: 44,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    // 테두리 없음
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
-    shadowRadius: 20,
+    shadowRadius: 16,
     elevation: 6,
+    // 원 안에서 넘치는 wave 애니메이션 글자 클리핑 방지
+    overflow: 'visible',
   },
   // ────────────────────────────────────────────────────────────
 
   logoCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: '#6BCB77',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 5,
+    borderWidth: 4,
     borderColor: '#FFF',
     shadowColor: '#6BCB77',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
     elevation: 10,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    marginBottom: 10,
+    marginBottom: 4,
   },
   titleChar: {
     fontFamily: 'GamjaFlower_400Regular',
-    fontSize: 72,
-    lineHeight: 80,
+    fontSize: 58,       // 원 안에 맞게 살짝 줄임
+    lineHeight: 66,
     includeFontPadding: false,
     textShadowColor: 'rgba(0,0,0,0.12)',
     textShadowOffset: { width: 2, height: 4 },
@@ -369,17 +363,18 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: 'Jua_400Regular',
-    fontSize: 22,
-    color: '#FF9800',
-    marginBottom: 12,
+    fontSize: 18,
+    // 노란색 → 진한 갈색으로 변경해서 흰 원 위에서도 잘 보이게
+    color: '#5C3D11',
+    marginBottom: 6,
     letterSpacing: 2,
   },
   desc: {
     fontFamily: 'Jua_400Regular',
-    fontSize: 16,
+    fontSize: 13,
     color: '#795548',
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 22,
   },
   bottomArea: {
     width: '100%',
