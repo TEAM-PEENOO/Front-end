@@ -1239,6 +1239,76 @@ DELETE /subjects/{subject_id}/persona/weak-points/{tag_id}
 
 ---
 
+### 9-4. 약점 개념 복습 콘텐츠 생성
+
+```
+POST /subjects/{subject_id}/persona/weak-points/{tag_id}/practice
+```
+
+> Claude AI가 해당 과목·개념에 맞는 복습 문제, 단계별 힌트, 핵심 개념 설명을 생성하여 반환한다.  
+> PracticeScreen("개념 사물함 → 복습하기")에서 호출됨.
+
+**Response `200`**
+```json
+{
+  "data": {
+    "concept": "진지한 여가",
+    "fail_count": 2,
+    "problem": "여가 활동이 '진지한 여가'로 발전했을 때 나타날 수 있는 사회적 이점을 두 가지 서술하시오.",
+    "hints": [
+      "개인의 취미가 전문성으로 이어지는 과정을 생각해봐요",
+      "그 활동이 다른 사람들과 어떤 관계를 만드는지 떠올려봐요",
+      "경제적·사회적 기여 측면에서도 생각해봐요"
+    ],
+    "concept_title": "진지한 여가 핵심 정리",
+    "concept_explanation": "진지한 여가란 단순 휴식이 아닌 꾸준한 노력과 기술 습득을 동반하는 여가 활동이에요.\n취미가 전문성으로 발전하면 원데이 클래스, 커뮤니티 형성 등 사회적 가치를 창출할 수 있어요."
+  }
+}
+```
+
+**Error `404`** — Weak point tag not found
+
+---
+
+### 9-5. 복습 답변 제출 및 채점
+
+```
+POST /subjects/{subject_id}/persona/weak-points/{tag_id}/practice/submit
+```
+
+> 사용자가 복습 문제에 대한 답변을 제출하면 Claude AI가 퍼지 채점을 수행한다.  
+> 완벽한 표현이 아니어도 핵심 내용을 파악했으면 정답으로 인정한다.  
+> 정답 시: `WeakPointTag` 삭제 + `PersonaMemory.stability += 0.2` (기억 유지율 증가).
+
+**Request Body**
+```json
+{
+  "problem": "여가 활동이 '진지한 여가'로 발전했을 때 나타날 수 있는 사회적 이점을 두 가지 서술하시오.",
+  "answer": "전문성이 높아지고 커뮤니티 형성에 기여할 수 있다."
+}
+```
+
+**Response `200`**
+```json
+{
+  "is_correct": true,
+  "feedback": "핵심을 잘 파악했어요! 전문성과 커뮤니티 측면을 모두 짚었네요."
+}
+```
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `is_correct` | boolean | 핵심 이해 여부 (퍼지 채점) |
+| `feedback` | string | 친근한 톤의 1~2문장 피드백 |
+
+**정답(`is_correct=true`) 시 서버 동작**:
+1. `WeakPointTag` 삭제 → 개념 사물함에서 제거
+2. `PersonaMemory.stability = min(1.0, stability + 0.2)` → 기억 유지율 강화
+
+**Error `404`** — Weak point tag not found
+
+---
+
 ## 10. 진행 현황 (Progress)
 
 ### 10-1. 과목 전체 진행 현황
@@ -1393,6 +1463,8 @@ GET /subjects/{subject_id}/stages/{stage_id}/exam-history
 | `GET` | `/subjects/{id}/persona/weak-points` | 약점 태그 목록 |
 | `GET` | `/subjects/{id}/persona/weak-points/{tag_id}` | 약점 태그 단건 조회 |
 | `DELETE` | `/subjects/{id}/persona/weak-points/{tag_id}` | 약점 태그 삭제 |
+| `POST` | `/subjects/{id}/persona/weak-points/{tag_id}/practice` | 약점 개념 복습 콘텐츠 생성 (AI) |
+| `POST` | `/subjects/{id}/persona/weak-points/{tag_id}/practice/submit` | 복습 답변 제출 및 퍼지 채점 (AI) |
 | `GET` | `/subjects/{id}/progress` | 과목 전체 진행 현황 |
 | `GET` | `/subjects/{id}/stages/{stage_id}/exam-history` | 단계 시험 이력 |
 
