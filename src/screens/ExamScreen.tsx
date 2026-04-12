@@ -11,6 +11,23 @@ import { colors } from '../theme/colors';
 import { examsApi } from '../api/exams';
 import { Exam, ExamQuestion, UserAnswer } from '../types';
 
+// 성격별 문제 번호별 AI 생각 목록
+const THOUGHTS_BY_PERSONALITY: Record<string, string[]> = {
+  curious:       ['오! 이거 배운 기억 있어요!', '왜 이렇게 되는 거예요?', '음... 헷갈리는데요 🤔', '이 개념 재밌었는데!', '마지막! 집중해서 풀어볼게요!'],
+  careful:       ['한 번 더 확인해볼게요...', '제가 제대로 이해한 게 맞나요?', '실수하면 안 되는데...', '천천히 다시 생각할게요.', '마지막 문제, 꼼꼼하게!'],
+  clumsy:        ['앗, 이거 배웠나요?', '엇... 헷갈려요!', '아 맞다! 선생님이 말씀하셨는데...', '잠깐, 뭐가 답이었더라 😅', '마지막 문제야! 잘 할 수 있어요!'],
+  perfectionist: ['예외 케이스는 없나요?', '더 정확히 말하면...', '이 풀이 방법 맞나요?', '완벽하게 풀어야겠어요.', '마지막! 완벽한 마무리를!'],
+  steady:        ['천천히 생각해볼게요.', '조금 더 쉬운 예시를 떠올려요.', '느긋하게 풀어볼게요~', '잘 모르겠지만 해볼게요.', '마지막 문제도 성실히!'],
+};
+
+const SUBMITTING_THOUGHTS: Record<string, string> = {
+  curious:       '저도 열심히 풀었어요! 결과 궁금해요!',
+  careful:       '실수 없이 풀었는지 걱정돼요...',
+  clumsy:        '앗, 다 풀었나요? 저도 다 했어요!',
+  perfectionist: '완벽하게 풀었다고 생각해요!',
+  steady:        '다 끝냈어요. 결과 기다릴게요 :)',
+};
+
 export const ExamScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -24,10 +41,35 @@ export const ExamScreen: React.FC = () => {
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // AI 학생 생각 애니메이션
+  const [aiThought, setAiThought] = useState('');
+  const [aiDots, setAiDots] = useState('');
+  const [aiThinking, setAiThinking] = useState(true);
+
   // 단답형 입력 모달
   const [shortAnswerModal, setShortAnswerModal] = useState<{ questionId: string; label: string } | null>(null);
   const [shortAnswerDraft, setShortAnswerDraft] = useState('');
   const shortAnswerInputRef = useRef<TextInput>(null);
+
+  // 문제 이동 시 AI 생각 업데이트
+  useEffect(() => {
+    const thoughts = THOUGHTS_BY_PERSONALITY[personality] ?? THOUGHTS_BY_PERSONALITY.curious;
+    setAiThinking(true);
+    setAiThought('');
+    const timer = setTimeout(() => {
+      setAiThought(thoughts[currentQ % thoughts.length]);
+      setAiThinking(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [currentQ, personality]);
+
+  // 타이핑 점 애니메이션
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAiDots(d => (d.length >= 3 ? '' : d + '.'));
+    }, 450);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -198,15 +240,23 @@ export const ExamScreen: React.FC = () => {
         <Text style={styles.dividerText}>VS</Text>
       </View>
 
-      {/* 하단: AI 학생 대기 */}
+      {/* 하단: AI 학생 */}
       <View style={styles.bottomHalf}>
         <View style={styles.studentArea}>
-          <Avatar size={64} style={styles.studentAvatar} />
+          <View style={styles.avatarWrapper}>
+            <Avatar size={60} style={styles.studentAvatar} />
+            <View style={styles.qBadge}>
+              <Text style={styles.qBadgeText}>Q{currentQ + 1}</Text>
+            </View>
+          </View>
           <View style={styles.studentThoughtBubble}>
+            <Text style={styles.studentName}>{studentName}</Text>
             <Text style={styles.studentThoughtText}>
               {submitting
-                ? `${studentName}도 열심히 풀고 있어요...`
-                : `${studentName}: "음... 생각 중이에요!"`
+                ? (SUBMITTING_THOUGHTS[personality] ?? `${studentName}도 열심히 채점 기다리는 중${aiDots}`)
+                : aiThinking
+                  ? `생각하는 중${aiDots}`
+                  : (aiThought || `음... 생각 중이에요${aiDots}`)
               }
             </Text>
           </View>
@@ -332,12 +382,20 @@ const styles = StyleSheet.create({
   },
   dividerText: { fontFamily: 'Jua_400Regular', fontSize: 20, color: '#FFF' },
   bottomHalf: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  studentArea: { flexDirection: 'row', alignItems: 'center', padding: 16 },
+  studentArea: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
+  avatarWrapper: { position: 'relative' },
   studentAvatar: { borderWidth: 3, borderColor: colors.primaryLight },
-  studentThoughtBubble: {
-    flex: 1, marginLeft: 12, backgroundColor: 'rgba(255,255,255,0.15)',
-    padding: 12, borderRadius: 16,
+  qBadge: {
+    position: 'absolute', bottom: -4, right: -4,
+    backgroundColor: colors.accent, borderRadius: 10, paddingHorizontal: 5, paddingVertical: 1,
+    borderWidth: 2, borderColor: '#FFF',
   },
+  qBadgeText: { fontFamily: 'Jua_400Regular', fontSize: 10, color: '#FFF' },
+  studentThoughtBubble: {
+    flex: 1, marginLeft: 14, backgroundColor: 'rgba(255,255,255,0.18)',
+    padding: 12, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+  },
+  studentName: { fontFamily: 'Jua_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 3 },
   studentThoughtText: { fontFamily: 'Jua_400Regular', fontSize: 15, color: '#FFF', lineHeight: 22 },
   // 단답형 모달
   modalOverlay: {
