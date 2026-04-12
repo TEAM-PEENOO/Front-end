@@ -68,17 +68,28 @@ export const StageEditScreen: React.FC = () => {
   // ── 단계 삭제 ───────────────────────────────────────────────────────
   const handleDeleteStage = (idx: number) => {
     const stage = stages[idx];
-    const label = stage.id ? `"${stage.name}" 단계를 삭제하면 이 단계의 시험 기록도 사라질 수 있어요.` : `"${stage.name}" 단계를 제거할까요?`;
+    const label = stage.id
+      ? `"${stage.name}" 단계를 삭제하면 이 단계의 시험 기록도 사라져요.`
+      : `"${stage.name}" 단계를 제거할까요?`;
     Alert.alert('단계 삭제', label, [
       { text: '취소', style: 'cancel' },
       {
         text: '삭제', style: 'destructive',
-        onPress: () => {
+        onPress: async () => {
           if (stage.id) {
-            // 기존 단계: deleted 플래그 설정 (저장 시 DELETE 호출)
-            setStages(prev => prev.map((s, i) => i === idx ? { ...s, deleted: true } : s));
+            // 기존 단계: 즉시 API 호출
+            try {
+              setSaving(true);
+              await stagesApi.delete(subjectId, stage.id);
+              setStages(prev => prev.filter((_, i) => i !== idx));
+            } catch (e: any) {
+              const msg = e?.response?.data?.detail || e?.message || '삭제에 실패했어요.';
+              Alert.alert('오류', typeof msg === 'string' ? msg : '삭제에 실패했어요.');
+            } finally {
+              setSaving(false);
+            }
           } else {
-            // 신규 단계: 그냥 제거
+            // 신규 단계(미저장): 로컬에서만 제거
             setStages(prev => prev.filter((_, i) => i !== idx));
           }
         },
@@ -116,13 +127,7 @@ export const StageEditScreen: React.FC = () => {
     try {
       setSaving(true);
 
-      // 1) 삭제 (기존 단계)
-      const toDelete = stages.filter(s => s.id && s.deleted);
-      for (const s of toDelete) {
-        await stagesApi.delete(subjectId, s.id!);
-      }
-
-      // 2) 수정 (기존 단계)
+      // 1) 수정 (기존 단계, 삭제는 handleDeleteStage에서 즉시 처리됨)
       const toUpdate = stages.filter(s => s.id && !s.deleted);
       for (const s of toUpdate) {
         await stagesApi.update(subjectId, s.id!, {
