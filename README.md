@@ -103,7 +103,7 @@ npx expo start --web
 
 ## 4. API 레퍼런스
 
-> 전체 명세: [`docs/API_spec.md`](docs/API_spec.md)
+> 전체 명세: [`docs/api/API_spec.md`](docs/api/API_spec.md)
 >
 > Base URL: `https://<railway-domain>/api/v1`
 > 인증: `Authorization: Bearer <access_token>`
