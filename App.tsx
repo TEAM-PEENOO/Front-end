@@ -83,7 +83,7 @@ export type RootStackParamList = {
   Weakness: { subjectId: string; studentName: string };
   GrowthTimeline: { subjectId: string; studentName: string };
   Syllabus: { subjectId: string; studentName: string; subjectName: string };
-  Practice: { subjectId: string; studentName: string; concept: string };
+  Practice: { subjectId: string; studentName: string; concept: string; tagId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

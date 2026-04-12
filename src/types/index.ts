@@ -163,6 +163,16 @@ export interface WeakPointTag {
   created_at: string;
 }
 
+// ── Practice ──────────────────────────────────────────────────────────
+export interface PracticeData {
+  concept: string;
+  fail_count: number;
+  problem: string;
+  hints: string[];
+  concept_title: string;
+  concept_explanation: string;
+}
+
 // ── Progress ──────────────────────────────────────────────────────────
 export interface ProgressStageItem {
   id: string;
