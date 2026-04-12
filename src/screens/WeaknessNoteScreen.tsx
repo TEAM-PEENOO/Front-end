@@ -67,7 +67,7 @@ export const WeaknessNoteScreen: React.FC = () => {
   };
 
   const handlePractice = (item: WeakPointTag) => {
-    navigation.navigate('Practice', { subjectId, studentName, concept: item.concept });
+    navigation.navigate('Practice', { subjectId, studentName, concept: item.concept, tagId: item.id });
   };
 
   return (
