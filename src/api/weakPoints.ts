@@ -1,6 +1,6 @@
 // src/api/weakPoints.ts
 import { apiClient } from './client';
-import { WeakPointTag } from '../types';
+import { WeakPointTag, PracticeData } from '../types';
 
 export const weakPointsApi = {
   list: async (subjectId: string): Promise<WeakPointTag[]> => {
@@ -19,5 +19,12 @@ export const weakPointsApi = {
 
   delete: async (subjectId: string, tagId: string): Promise<void> => {
     await apiClient.delete(`/subjects/${subjectId}/persona/weak-points/${tagId}`);
+  },
+
+  practice: async (subjectId: string, tagId: string): Promise<PracticeData> => {
+    const res = await apiClient.post<PracticeData>(
+      `/subjects/${subjectId}/persona/weak-points/${tagId}/practice`
+    );
+    return res.data;
   },
 };
