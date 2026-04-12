@@ -165,6 +165,7 @@ export const StageEditScreen: React.FC = () => {
             id: s.id,
             name: s.name,
             assignedItemIds: s.curriculum_items.map((i) => i.id),
+            passed: s.passed,
           }))
       );
       Alert.alert('완료', '단계 편집이 저장됐어요!');
