@@ -18,6 +18,8 @@ interface LocalStage {
   name: string;
   assignedItemIds: string[];
   deleted?: boolean;
+  modified?: boolean;       // 사용자가 실제로 변경한 경우만 true
+  passed?: boolean;         // 통과된 단계는 편집/삭제 불가
 }
 
 export const StageEditScreen: React.FC = () => {
@@ -49,6 +51,7 @@ export const StageEditScreen: React.FC = () => {
             id: s.id,
             name: s.name,
             assignedItemIds: s.curriculum_items.map((i) => i.id),
+            passed: s.passed,
           }))
       );
     } catch {
@@ -62,7 +65,7 @@ export const StageEditScreen: React.FC = () => {
 
   // ── 단계 이름 변경 ──────────────────────────────────────────────────
   const setName = (idx: number, name: string) => {
-    setStages(prev => prev.map((s, i) => i === idx ? { ...s, name } : s));
+    setStages(prev => prev.map((s, i) => i === idx ? { ...s, name, modified: true } : s));
   };
 
   // ── 단계 삭제 ───────────────────────────────────────────────────────
@@ -109,6 +112,7 @@ export const StageEditScreen: React.FC = () => {
       const already = s.assignedItemIds.includes(itemId);
       return {
         ...s,
+        modified: true,
         assignedItemIds: already
           ? s.assignedItemIds.filter(id => id !== itemId)
           : [...s.assignedItemIds, itemId],
@@ -127,8 +131,15 @@ export const StageEditScreen: React.FC = () => {
     try {
       setSaving(true);
 
-      // 1) 수정 (기존 단계, 삭제는 handleDeleteStage에서 즉시 처리됨)
-      const toUpdate = stages.filter(s => s.id && !s.deleted);
+      // 1) 삭제 (기존 단계)
+      const toDelete = stages.filter(s => s.id && s.deleted);
+      for (const s of toDelete) {
+        await stagesApi.delete(subjectId, s.id!);
+      }
+
+      // 2) 수정 (실제로 변경된 기존 단계만, 통과된 단계 제외)
+      const toUpdate = stages.filter(s => s.id && !s.deleted && s.modified && !s.passed);
+        
       for (const s of toUpdate) {
         await stagesApi.update(subjectId, s.id!, {
           name: s.name.trim(),
@@ -254,23 +265,31 @@ export const StageEditScreen: React.FC = () => {
               <View key={stage.uid} style={styles.stageCard}>
                 {/* 단계 헤더 */}
                 <View style={styles.stageHeader}>
-                  <View style={styles.stageBadge}>
+                  <View style={[styles.stageBadge, stage.passed && styles.stageBadgePassed]}>
                     <Text style={styles.stageBadgeText}>{visibleIdx + 1}</Text>
                   </View>
                   <TextInput
-                    style={styles.stageNameInput}
+                    style={[styles.stageNameInput, stage.passed && styles.stageNameInputPassed]}
                     value={stage.name}
                     onChangeText={t => setName(realIdx, t)}
                     placeholder="단계 이름"
                     placeholderTextColor="#BBB"
                     returnKeyType="done"
+                    editable={!stage.passed}
                   />
-                  <TouchableOpacity
-                    onPress={() => handleDeleteStage(realIdx)}
-                    style={styles.stageDeleteBtn}
-                  >
-                    <FontAwesome5 name="trash" size={14} color={colors.error} />
-                  </TouchableOpacity>
+                  {stage.passed ? (
+                    <View style={styles.passedBadge}>
+                      <FontAwesome5 name="check-circle" size={12} color={colors.success} style={{ marginRight: 3 }} />
+                      <Text style={styles.passedBadgeText}>통과</Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => handleDeleteStage(realIdx)}
+                      style={styles.stageDeleteBtn}
+                    >
+                      <FontAwesome5 name="trash" size={14} color={colors.error} />
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {/* 배정된 항목 */}
@@ -376,6 +395,14 @@ const styles = StyleSheet.create({
     width: 34, height: 34, borderRadius: 10,
     backgroundColor: '#FFF0F0', justifyContent: 'center', alignItems: 'center',
   },
+  stageBadgePassed: { backgroundColor: colors.success },
+  stageNameInputPassed: { color: '#AAA', backgroundColor: '#F5F5F5', borderColor: '#E0E0E0' },
+  passedBadge: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#E8F5E9', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6,
+    borderWidth: 1, borderColor: '#C8E6C9',
+  },
+  passedBadgeText: { fontFamily: 'Jua_400Regular', fontSize: 12, color: colors.success },
   assignedContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, minHeight: 28 },
   noItemsText: { fontFamily: 'Jua_400Regular', fontSize: 13, color: '#CCC', paddingLeft: 4 },
   assignedChip: {
