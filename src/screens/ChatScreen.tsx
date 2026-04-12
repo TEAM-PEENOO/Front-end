@@ -267,7 +267,12 @@ export const ChatScreen: React.FC = () => {
             onChangeText={setInputText}
             placeholderTextColor="rgba(255,255,255,0.5)"
             multiline
-            onSubmitEditing={sendMessage}
+            blurOnSubmit={false}
+            onKeyPress={({ nativeEvent }: any) => {
+              if (nativeEvent.key === 'Enter' && !nativeEvent.shiftKey) {
+                sendMessage();
+              }
+            }}
           />
           <TouchableOpacity
             style={[styles.sendBtn, (streaming || !inputText.trim()) && { opacity: 0.4 }]}
