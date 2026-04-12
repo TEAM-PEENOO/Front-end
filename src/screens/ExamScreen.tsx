@@ -1,8 +1,8 @@
 // src/screens/ExamScreen.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, ScrollView,
-  TouchableOpacity, ActivityIndicator, Alert,
+  TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -23,6 +23,11 @@ export const ExamScreen: React.FC = () => {
   const [currentQ, setCurrentQ] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // 단답형 입력 모달
+  const [shortAnswerModal, setShortAnswerModal] = useState<{ questionId: string; label: string } | null>(null);
+  const [shortAnswerDraft, setShortAnswerDraft] = useState('');
+  const shortAnswerInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     (async () => {
@@ -143,13 +148,9 @@ export const ExamScreen: React.FC = () => {
                 <TouchableOpacity
                   style={styles.shortAnswerInput}
                   onPress={() => {
-                    Alert.prompt?.(
-                      question.concept_tag,
-                      '답변을 입력하세요',
-                      (text) => text && handleSelectAnswer(question.id, text),
-                      'plain-text',
-                      userAnswers[question.id] ?? ''
-                    );
+                    setShortAnswerDraft(userAnswers[question.id] ?? '');
+                    setShortAnswerModal({ questionId: question.id, label: question.concept_tag });
+                    setTimeout(() => shortAnswerInputRef.current?.focus(), 100);
                   }}
                 >
                   <Text style={{ fontFamily: 'Jua_400Regular', fontSize: 16, color: userAnswers[question.id] ? colors.textDark : '#AAA' }}>
@@ -211,6 +212,62 @@ export const ExamScreen: React.FC = () => {
           </View>
         </View>
       </View>
+
+      {/* 단답형 입력 모달 */}
+      <Modal
+        visible={!!shortAnswerModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShortAnswerModal(null)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>단답형 답변 입력</Text>
+            {shortAnswerModal && (
+              <Text style={styles.modalLabel}>{shortAnswerModal.label}</Text>
+            )}
+            <TextInput
+              ref={shortAnswerInputRef}
+              style={styles.modalInput}
+              value={shortAnswerDraft}
+              onChangeText={setShortAnswerDraft}
+              placeholder="답을 입력하세요"
+              placeholderTextColor="#AAA"
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                if (shortAnswerModal && shortAnswerDraft.trim()) {
+                  handleSelectAnswer(shortAnswerModal.questionId, shortAnswerDraft.trim());
+                }
+                setShortAnswerModal(null);
+              }}
+            />
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShortAnswerModal(null)}
+              >
+                <Text style={styles.modalCancelText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalConfirmBtn, !shortAnswerDraft.trim() && { opacity: 0.4 }]}
+                disabled={!shortAnswerDraft.trim()}
+                onPress={() => {
+                  if (shortAnswerModal) {
+                    handleSelectAnswer(shortAnswerModal.questionId, shortAnswerDraft.trim());
+                  }
+                  setShortAnswerModal(null);
+                }}
+              >
+                <Text style={styles.modalConfirmText}>확인</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -282,4 +339,31 @@ const styles = StyleSheet.create({
     padding: 12, borderRadius: 16,
   },
   studentThoughtText: { fontFamily: 'Jua_400Regular', fontSize: 15, color: '#FFF', lineHeight: 22 },
+  // 단답형 모달
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center', alignItems: 'center', padding: 24,
+  },
+  modalBox: {
+    width: '100%', backgroundColor: '#FFFDF9', borderRadius: 20,
+    padding: 24, gap: 12,
+  },
+  modalTitle: { fontFamily: 'Jua_400Regular', fontSize: 20, color: colors.textDark },
+  modalLabel: { fontFamily: 'Jua_400Regular', fontSize: 14, color: colors.primary },
+  modalInput: {
+    fontFamily: 'Jua_400Regular', fontSize: 17, color: colors.textDark,
+    borderWidth: 2, borderColor: colors.border, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 12,
+  },
+  modalBtnRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  modalCancelBtn: {
+    flex: 1, paddingVertical: 14, borderRadius: 12,
+    backgroundColor: '#F0F0F0', alignItems: 'center',
+  },
+  modalCancelText: { fontFamily: 'Jua_400Regular', fontSize: 16, color: '#888' },
+  modalConfirmBtn: {
+    flex: 1, paddingVertical: 14, borderRadius: 12,
+    backgroundColor: colors.primary, alignItems: 'center',
+  },
+  modalConfirmText: { fontFamily: 'Jua_400Regular', fontSize: 16, color: '#FFF' },
 });
