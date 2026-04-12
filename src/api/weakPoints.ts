@@ -27,4 +27,17 @@ export const weakPointsApi = {
     );
     return res.data;
   },
+
+  submitPractice: async (
+    subjectId: string,
+    tagId: string,
+    problem: string,
+    answer: string,
+  ): Promise<{ is_correct: boolean; feedback: string }> => {
+    const res = await apiClient.post<{ is_correct: boolean; feedback: string }>(
+      `/subjects/${subjectId}/persona/weak-points/${tagId}/practice/submit`,
+      { problem, answer },
+    );
+    return res.data;
+  },
 };
