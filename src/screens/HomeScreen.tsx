@@ -188,6 +188,7 @@ export const HomeScreen: React.FC = () => {
       <ImageBackground
         source={require('../../assets/images/classroom_bg.png')}
         style={styles.bgImage}
+        resizeMode="cover" // ✨ 수정됨: 배경 찌그러짐 방지
         imageStyle={{ opacity: 0.85 }}
       >
         {/* 과목 선택 버튼 (좌상단) */}
@@ -200,7 +201,11 @@ export const HomeScreen: React.FC = () => {
           <Text style={styles.subjectSelectText}>과목 선택</Text>
         </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          contentContainerStyle={[styles.container, { flexGrow: 1 }]} // ✨ 수정됨: ScrollView 콘텐츠 늘어짐 방지
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
 
           {/* 헤더 */}
           <View style={styles.headerWrapper}>
@@ -242,6 +247,7 @@ export const HomeScreen: React.FC = () => {
               <FontAwesome5 name="seedling" size={20} color="#8BC34A" />
             </Animated.View>
 
+            {/* 말풍선 */}
             <Animated.View style={[styles.characterSpeechBubble, {
               transform: [
                 { scale: entBubble.interpolate({ inputRange: [0, 0.8, 1], outputRange: [0, 1.1, 1] }) },
@@ -362,8 +368,17 @@ export const HomeScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000' },
-  bgImage: { flex: 1, width: '100%', height: '100%' },
-  container: { padding: 24, paddingBottom: 60 },
+  bgImage: { flex: 1 }, // ✨ 수정됨: width 100%, height 100% 제거 (flex: 1로 충분함)
+  
+  // ✨ 수정됨: 가로 모드나 태블릿에서 너무 늘어지지 않게 방어 코드 추가
+  container: { 
+    padding: 24, 
+    paddingBottom: 60,
+    maxWidth: 600, 
+    alignSelf: 'center', 
+    width: '100%',
+  },
+
   headerWrapper: { alignItems: 'center', marginBottom: 24, zIndex: 20 },
   ropeLeft: { position: 'absolute', top: -24, left: '20%', width: 6, height: 40, backgroundColor: '#8C7A5E', zIndex: -1 },
   ropeRight: { position: 'absolute', top: -24, right: '20%', width: 6, height: 40, backgroundColor: '#8C7A5E', zIndex: -1 },
@@ -384,11 +399,26 @@ const styles = StyleSheet.create({
   characterImg: { width: '100%', height: '100%' },
   sparkle1: { position: 'absolute', top: 40, left: 40, zIndex: 10 },
   sparkle2: { position: 'absolute', top: 60, right: 30, zIndex: 10 },
+  
+  // ✨ 수정됨: 말풍선 우측 배치 및 잘림 방지
   characterSpeechBubble: {
-    position: 'absolute', top: -44, alignSelf: 'center', backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, borderBottomLeftRadius: 0,
-    borderWidth: 3, borderColor: '#E5D6C5', zIndex: 15,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 8,
+    position: 'absolute', 
+    top: 10,               
+    left: '55%',           
+    maxWidth: '45%',       
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16, 
+    paddingVertical: 10, 
+    borderRadius: 20, 
+    borderBottomLeftRadius: 0, 
+    borderWidth: 3, 
+    borderColor: '#E5D6C5', 
+    zIndex: 15,
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 6 }, 
+    shadowOpacity: 0.15, 
+    shadowRadius: 6, 
+    elevation: 8,
   },
   speechText: { fontFamily: 'Jua_400Regular', fontSize: 18, color: colors.textDark },
   statusCard: {

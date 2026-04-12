@@ -1,5 +1,5 @@
 // src/screens/StageEditScreen.tsx
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView, TouchableOpacity,
   ScrollView, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Modal,
@@ -13,6 +13,7 @@ import { colors } from '../theme/colors';
 
 // 로컬 편집용 stage 타입 (신규 단계는 id가 없음)
 interface LocalStage {
+  uid: string;              // 안정적인 로컬 키 (기존 단계: id, 신규: timestamp)
   id?: string;              // 없으면 신규
   name: string;
   assignedItemIds: string[];
@@ -44,6 +45,7 @@ export const StageEditScreen: React.FC = () => {
         stageData
           .sort((a, b) => a.order_index - b.order_index)
           .map((s: Stage) => ({
+            uid: s.id,
             id: s.id,
             name: s.name,
             assignedItemIds: s.curriculum_items.map((i) => i.id),
@@ -66,17 +68,28 @@ export const StageEditScreen: React.FC = () => {
   // ── 단계 삭제 ───────────────────────────────────────────────────────
   const handleDeleteStage = (idx: number) => {
     const stage = stages[idx];
-    const label = stage.id ? `"${stage.name}" 단계를 삭제하면 이 단계의 시험 기록도 사라질 수 있어요.` : `"${stage.name}" 단계를 제거할까요?`;
+    const label = stage.id
+      ? `"${stage.name}" 단계를 삭제하면 이 단계의 시험 기록도 사라져요.`
+      : `"${stage.name}" 단계를 제거할까요?`;
     Alert.alert('단계 삭제', label, [
       { text: '취소', style: 'cancel' },
       {
         text: '삭제', style: 'destructive',
-        onPress: () => {
+        onPress: async () => {
           if (stage.id) {
-            // 기존 단계: deleted 플래그 설정 (저장 시 DELETE 호출)
-            setStages(prev => prev.map((s, i) => i === idx ? { ...s, deleted: true } : s));
+            // 기존 단계: 즉시 API 호출
+            try {
+              setSaving(true);
+              await stagesApi.delete(subjectId, stage.id);
+              setStages(prev => prev.filter((_, i) => i !== idx));
+            } catch (e: any) {
+              const msg = e?.response?.data?.error?.message || e?.message || '삭제에 실패했어요.';
+              Alert.alert('오류', typeof msg === 'string' ? msg : '삭제에 실패했어요.');
+            } finally {
+              setSaving(false);
+            }
           } else {
-            // 신규 단계: 그냥 제거
+            // 신규 단계(미저장): 로컬에서만 제거
             setStages(prev => prev.filter((_, i) => i !== idx));
           }
         },
@@ -86,7 +99,7 @@ export const StageEditScreen: React.FC = () => {
 
   // ── 단계 추가 ───────────────────────────────────────────────────────
   const handleAddStage = () => {
-    setStages(prev => [...prev, { name: `단계 ${prev.filter(s => !s.deleted).length + 1}`, assignedItemIds: [] }]);
+    setStages(prev => [...prev, { uid: Date.now().toString(), name: `단계 ${prev.filter(s => !s.deleted).length + 1}`, assignedItemIds: [] }]);
   };
 
   // ── 아이템 배정 토글 ─────────────────────────────────────────────────
@@ -114,13 +127,7 @@ export const StageEditScreen: React.FC = () => {
     try {
       setSaving(true);
 
-      // 1) 삭제 (기존 단계)
-      const toDelete = stages.filter(s => s.id && s.deleted);
-      for (const s of toDelete) {
-        await stagesApi.delete(subjectId, s.id!);
-      }
-
-      // 2) 수정 (기존 단계)
+      // 1) 수정 (기존 단계, 삭제는 handleDeleteStage에서 즉시 처리됨)
       const toUpdate = stages.filter(s => s.id && !s.deleted);
       for (const s of toUpdate) {
         await stagesApi.update(subjectId, s.id!, {
@@ -137,9 +144,19 @@ export const StageEditScreen: React.FC = () => {
         }
       }
 
-      Alert.alert('완료', '단계 편집이 저장됐어요!', [
-        { text: '확인', onPress: () => navigation.goBack() },
-      ]);
+      // 저장 완료 후 서버에서 최신 상태 재로드 (Bug 3 방지: 신규 단계에 ID 부여)
+      const refreshed = await stagesApi.list(subjectId);
+      setStages(
+        refreshed
+          .sort((a: Stage, b: Stage) => a.order_index - b.order_index)
+          .map((s: Stage) => ({
+            uid: s.id,
+            id: s.id,
+            name: s.name,
+            assignedItemIds: s.curriculum_items.map((i) => i.id),
+          }))
+      );
+      Alert.alert('완료', '단계 편집이 저장됐어요!');
     } catch (e: any) {
       const msg = e?.response?.data?.detail?.message || e?.message || '저장에 실패했어요.';
       Alert.alert('오류', msg);
@@ -234,7 +251,7 @@ export const StageEditScreen: React.FC = () => {
             // stages 배열에서의 실제 인덱스
             const realIdx = stages.indexOf(stage);
             return (
-              <View key={`${stage.id ?? 'new'}-${visibleIdx}`} style={styles.stageCard}>
+              <View key={stage.uid} style={styles.stageCard}>
                 {/* 단계 헤더 */}
                 <View style={styles.stageHeader}>
                   <View style={styles.stageBadge}>
