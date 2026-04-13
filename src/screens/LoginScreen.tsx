@@ -289,9 +289,12 @@ const styles = StyleSheet.create({
   },
   bgImage: {
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
   centerWrapper: {
     flex: 1,
+    width: '100%',
     alignItems: 'center',
   },
   container: {
@@ -318,7 +321,7 @@ const styles = StyleSheet.create({
   glowCircle: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
     borderRadius: 28,
     paddingVertical: 40,
     paddingHorizontal: 44,
