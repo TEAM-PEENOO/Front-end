@@ -26,10 +26,12 @@ const DECORATIONS = [
   { icon: 'sun',       color: '#FFD93D', top: 0.03, left: 0.35,  size: 26, delay: 300 },
 ];
 
+// 원 크기 고정값
+const CIRCLE_SIZE = 300;
+
 export const LoginScreen: React.FC = () => {
   const { loginWithToken } = useAuth();
   const [loading, setLoading] = useState(false);
-
   // 창 크기 변화에 반응하는 훅
   const { width: SW } = useWindowDimensions();
 
@@ -67,9 +69,7 @@ export const LoginScreen: React.FC = () => {
     const charEntrance = TITLE_CHARS.map((_, i) =>
       Animated.sequence([
         Animated.delay(500 + i * 120),
-        Animated.spring(charAnims[i], {
-          toValue: 1, friction: 3, tension: 80, useNativeDriver: true,
-        }),
+        Animated.spring(charAnims[i], { toValue: 1, friction: 3, tension: 80, useNativeDriver: true }),
       ])
     );
 
@@ -113,14 +113,12 @@ export const LoginScreen: React.FC = () => {
         await new Promise<void>((resolve, reject) => {
           const channel = new BroadcastChannel('oauth_callback');
           let settled = false;
-
           const settle = () => {
             if (settled) return;
             settled = true;
             clearTimeout(timer);
             channel.close();
           };
-
           channel.onmessage = async (event: MessageEvent) => {
             settle();
             const token: string | undefined = event.data?.access_token;
@@ -131,7 +129,6 @@ export const LoginScreen: React.FC = () => {
               resolve();
             }
           };
-
           window.open(authUrl, 'google_oauth', 'width=500,height=650,left=300,top=100');
           const timer = setTimeout(() => { settle(); resolve(); }, 10 * 60 * 1000);
         });
@@ -165,7 +162,6 @@ export const LoginScreen: React.FC = () => {
         style={styles.bgImage}
         resizeMode="cover"
       >
-        {/* 창이 넓어져도 콘텐츠를 화면 중앙에 고정하는 래퍼 */}
         <View style={styles.centerWrapper}>
           <View style={styles.container}>
 
@@ -192,7 +188,6 @@ export const LoginScreen: React.FC = () => {
 
             {/* 메인 콘텐츠 */}
             <View style={styles.centerArea}>
-
               {/* ── 반투명 흰색 원 ── */}
               <Animated.View style={[styles.glowCircle, { opacity: glowAnim }]}>
 
@@ -226,7 +221,6 @@ export const LoginScreen: React.FC = () => {
                   ))}
                 </View>
 
-                {/* 서브타이틀 */}
                 <Animated.Text style={[styles.subtitle, {
                   opacity: subAnim,
                   transform: [{ translateY: subAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
@@ -240,7 +234,6 @@ export const LoginScreen: React.FC = () => {
                 </Animated.Text>
 
               </Animated.View>
-              {/* ── 반투명 원 끝 ── */}
 
             </View>
 
@@ -273,7 +266,7 @@ export const LoginScreen: React.FC = () => {
                     </>
                   )}
                 </TouchableOpacity>
-
+                
                 <Text style={styles.terms}>
                   로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의합니다.
                 </Text>
@@ -295,7 +288,6 @@ const styles = StyleSheet.create({
   bgImage: {
     flex: 1,
   },
-  // 창이 넓어져도 중앙 고정
   centerWrapper: {
     flex: 1,
     alignItems: 'center',
@@ -339,29 +331,29 @@ const styles = StyleSheet.create({
   // ────────────────────────────────────────────────────────────
 
   logoCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: '#6BCB77',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 5,
+    borderWidth: 4,
     borderColor: '#FFF',
     shadowColor: '#6BCB77',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
     elevation: 10,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    marginBottom: 10,
+    marginBottom: 4,
   },
   titleChar: {
     fontFamily: 'GamjaFlower_400Regular',
-    fontSize: 72,
-    lineHeight: 80,
+    fontSize: 58,       // 원 안에 맞게 살짝 줄임
+    lineHeight: 66,
     includeFontPadding: false,
     textShadowColor: 'rgba(0,0,0,0.12)',
     textShadowOffset: { width: 2, height: 4 },
@@ -369,17 +361,18 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: 'Jua_400Regular',
-    fontSize: 22,
-    color: '#FF9800',
-    marginBottom: 12,
+    fontSize: 18,
+    // 노란색 → 진한 갈색으로 변경해서 흰 원 위에서도 잘 보이게
+    color: '#5C3D11',
+    marginBottom: 6,
     letterSpacing: 2,
   },
   desc: {
     fontFamily: 'Jua_400Regular',
-    fontSize: 16,
+    fontSize: 13,
     color: '#795548',
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 22,
   },
   bottomArea: {
     width: '100%',
