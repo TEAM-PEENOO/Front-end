@@ -91,8 +91,8 @@ export const SubjectListScreen: React.FC = () => {
       {/* 헤더 */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>나의 제자</Text>
-          <Text style={styles.headerSub}>내가 만든 과목 목록</Text>
+          <Text style={styles.headerTitle}>과외 학생 고르기</Text>
+          <Text style={styles.headerSub}>오늘은 어떤 학생과 함께하시나요?</Text>
         </View>
         <TouchableOpacity
           onPress={async () => {
@@ -121,7 +121,7 @@ export const SubjectListScreen: React.FC = () => {
           <View style={styles.emptyContainer}>
             <FontAwesome5 name="seedling" size={60} color={colors.primaryLight} />
             <Text style={styles.emptyTitle}>아직 과목이 없어요</Text>
-            <Text style={styles.emptySub}>첫 번째 과목을 만들고{'\n'}AI 제자를 키워보세요!</Text>
+            <Text style={styles.emptySub}>첫 번째 과목을 만들고{'\n'} AI 과외 학생을 키워보세요!</Text>
           </View>
         }
         renderItem={({ item }) => (
