@@ -32,22 +32,23 @@ const CIRCLE_SIZE = 300;
 export const LoginScreen: React.FC = () => {
   const { loginWithToken } = useAuth();
   const [loading, setLoading] = useState(false);
-
+  // 창 크기 변화에 반응하는 훅
   const { width: SW } = useWindowDimensions();
 
   // ── 애니메이션 값 ────────────────────────────────────────────
-  const charAnims  = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
-  const waveAnims  = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
-  const decoAnims  = useRef(DECORATIONS.map(() => new Animated.Value(0))).current;
-  const logoAnim   = useRef(new Animated.Value(0)).current;
-  const subAnim    = useRef(new Animated.Value(0)).current;
-  const descAnim   = useRef(new Animated.Value(0)).current;
-  const btnAnim    = useRef(new Animated.Value(0)).current;
-  const btnBounce  = useRef(new Animated.Value(0)).current;
-  const glowAnim   = useRef(new Animated.Value(0)).current;
+  const charAnims   = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
+  const waveAnims   = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
+  const decoAnims   = useRef(DECORATIONS.map(() => new Animated.Value(0))).current;
+  const logoAnim    = useRef(new Animated.Value(0)).current;
+  const subAnim     = useRef(new Animated.Value(0)).current;
+  const descAnim    = useRef(new Animated.Value(0)).current;
+  const btnAnim     = useRef(new Animated.Value(0)).current;
+  const btnBounce   = useRef(new Animated.Value(0)).current;
+  // 반투명 원 fade-in
+  const glowAnim    = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // 0. 반투명 원 fade-in
+    // 0. 반투명 원 먼저 fade-in
     Animated.timing(glowAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
 
     // 1. 장식 아이콘 fade-in (stagger)
@@ -187,14 +188,13 @@ export const LoginScreen: React.FC = () => {
 
             {/* 메인 콘텐츠 */}
             <View style={styles.centerArea}>
-
-              {/* ── 반투명 흰색 정원 ── */}
+              {/* ── 반투명 흰색 원 ── */}
               <Animated.View style={[styles.glowCircle, { opacity: glowAnim }]}>
 
                 {/* 로고 아이콘 */}
-                <Animated.View style={{ transform: [{ scale: logoScale }], marginBottom: 8 }}>
+                <Animated.View style={{ transform: [{ scale: logoScale }], marginBottom: 12 }}>
                   <View style={styles.logoCircle}>
-                    <FontAwesome5 name="seedling" size={44} color="#FFF" solid />
+                    <FontAwesome5 name="seedling" size={52} color="#FFF" solid />
                   </View>
                 </Animated.View>
 
@@ -221,7 +221,6 @@ export const LoginScreen: React.FC = () => {
                   ))}
                 </View>
 
-                {/* 서브타이틀 — 배경과 구분되도록 진한 갈색으로 변경 */}
                 <Animated.Text style={[styles.subtitle, {
                   opacity: subAnim,
                   transform: [{ translateY: subAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
@@ -235,7 +234,6 @@ export const LoginScreen: React.FC = () => {
                 </Animated.Text>
 
               </Animated.View>
-              {/* ── 정원 끝 ── */}
 
             </View>
 
@@ -268,6 +266,7 @@ export const LoginScreen: React.FC = () => {
                     </>
                   )}
                 </TouchableOpacity>
+                
                 <Text style={styles.terms}>
                   로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의합니다.
                 </Text>
@@ -313,22 +312,21 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  // ── 반투명 흰색 정원 ─────────────────────────────────────────
+  // ── 반투명 흰색 원 ──────────────────────────────────────────
   glowCircle: {
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    borderRadius: CIRCLE_SIZE / 2,   // 완전한 정원
-    backgroundColor: 'rgba(255, 255, 255, 0.60)',
     alignItems: 'center',
     justifyContent: 'center',
-    // 테두리 없음
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    borderRadius: 999,          // 내용물에 맞게 동그랗게
+    paddingVertical: 40,
+    paddingHorizontal: 44,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
-    shadowRadius: 16,
+    shadowRadius: 20,
     elevation: 6,
-    // 원 안에서 넘치는 wave 애니메이션 글자 클리핑 방지
-    overflow: 'visible',
   },
   // ────────────────────────────────────────────────────────────
 
