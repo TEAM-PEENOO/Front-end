@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView,
   TouchableOpacity, ActivityIndicator, Alert, Animated, Easing, Platform,
-  ImageBackground, useWindowDimensions,
+  ImageBackground, Image, useWindowDimensions,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -33,7 +33,7 @@ export const LoginScreen: React.FC = () => {
   const { loginWithToken } = useAuth();
   const [loading, setLoading] = useState(false);
   // 창 크기 변화에 반응하는 훅
-  const { width: SW } = useWindowDimensions();
+  const { width: SW, height: SH } = useWindowDimensions();
 
   // ── 애니메이션 값 ────────────────────────────────────────────
   const charAnims   = useRef(TITLE_CHARS.map(() => new Animated.Value(0))).current;
@@ -172,7 +172,7 @@ export const LoginScreen: React.FC = () => {
                 style={[
                   styles.decoIcon,
                   {
-                    top:   SW * d.top,
+                    top:   SH * d.top,
                     left:  (d as any).left  !== undefined ? SW * (d as any).left  : undefined,
                     right: (d as any).right !== undefined ? SW * (d as any).right : undefined,
                     opacity: decoAnims[i],
@@ -193,9 +193,11 @@ export const LoginScreen: React.FC = () => {
 
                 {/* 로고 아이콘 */}
                 <Animated.View style={{ transform: [{ scale: logoScale }], marginBottom: 12 }}>
-                  <View style={styles.logoCircle}>
-                    <FontAwesome5 name="seedling" size={52} color="#FFF" solid />
-                  </View>
+                  <Image
+                    source={require('../../assets/teachu_logo_square.png')}
+                    style={styles.logoImage}
+                    resizeMode="contain"
+                  />
                 </Animated.View>
 
                 {/* 티-츄! 글자별 색상 + 애니메이션 */}
@@ -317,7 +319,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.55)',
-    borderRadius: 999,          // 내용물에 맞게 동그랗게
+    borderRadius: 28,
     paddingVertical: 40,
     paddingHorizontal: 44,
     borderWidth: 2,
@@ -330,20 +332,15 @@ const styles = StyleSheet.create({
   },
   // ────────────────────────────────────────────────────────────
 
-  logoCircle: {
+  logoImage: {
     width: 90,
     height: 90,
-    borderRadius: 45,
-    backgroundColor: '#6BCB77',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 4,
-    borderColor: '#FFF',
-    shadowColor: '#6BCB77',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 10,
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
   titleRow: {
     flexDirection: 'row',
